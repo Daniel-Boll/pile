@@ -1,0 +1,18 @@
+\ Adds to the memory in the first byte the value 97. Think of it like mem[0] = 97
+mem 0 + 97 <|
+mem 1 + 98 <|
+mem 2 + 99 <|
+
+\ Adds to the memory in the first byte the value of it self + 1 Think of it like mem[0] = mem[0] + 1
+mem 0 + dup |> 1 + <|
+mem 1 + dup |> 1 + <|
+mem 2 + dup |> 1 + <|
+
+\ Dump the memory at the specified address
+mem 0 + |> .
+mem 1 + |> .
+mem 2 + |> .
+
+mem 0 + |> .
+mem 1 + |> .
+mem 2 + |> .
