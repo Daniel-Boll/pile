@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sys/syscall.h>
+
 #include <pile/utils/common.hpp>
 #include <pile/utils/core.hpp>
 
@@ -16,6 +18,10 @@ enum class Operation {
   MEM,
   STORE,
   LOAD,
+
+  // Kernel
+  SYSCALL1,
+  SYSCALL3,
 
   // Operations
   PLUS,
@@ -38,9 +44,7 @@ enum class Operation {
   // Block control
   END
 };
-#define OPERATIONS_COUNT 22
-
-#define ENUM_NAME(x) #x
+#define OPERATIONS_COUNT 24 // Last syscall1
 
 struct OperationData {
   Operation operation;
@@ -70,6 +74,10 @@ struct OperationData {
         return "STORE";
       case Operation::LOAD:
         return "LOAD";
+      case Operation::SYSCALL1:
+        return "SYSCALL1";
+      case Operation::SYSCALL3:
+        return "SYSCALL3";
       case Operation::PLUS:
         return "PLUS";
       case Operation::MINUS:
@@ -124,6 +132,8 @@ namespace pile {
     inline OperationData mem() { return OperationData{.operation = Operation::MEM}; }
     inline OperationData store() { return OperationData{.operation = Operation::STORE}; }
     inline OperationData load() { return OperationData{.operation = Operation::LOAD}; }
+    inline OperationData syscall1() { return OperationData{.operation = Operation::SYSCALL1}; }
+    inline OperationData syscall3() { return OperationData{.operation = Operation::SYSCALL3}; }
     inline OperationData mod() { return OperationData{.operation = Operation::MOD}; }
     inline OperationData equals() { return OperationData{.operation = Operation::EQUAL}; }
     inline OperationData if_op() { return OperationData{.operation = Operation::IF}; }

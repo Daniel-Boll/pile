@@ -20,7 +20,7 @@ namespace pile {
     out << "global _start\n";
     out << "_start:\n";
 
-    static_assert(OPERATIONS_COUNT == 22, "Update this function when adding new operations");
+    assert_msg(OPERATIONS_COUNT == 24, "Update this function when adding new operations");
     for (auto& op : operations) {
       out << "  .address_" << op.instruction_counter << ":\n";
       switch (op.operation) {
@@ -202,6 +202,22 @@ namespace pile {
           out << "       xor rbx, rbx\n";
           out << "       mov bl, [rax]\n";  // Load only a byte, that why the low part of rbx (bl)
           out << "       push rbx\n";
+          break;
+        }
+        case Operation::SYSCALL1: {
+          out << "       ;; -- syscall1 --\n";
+          out << "       pop rdi\n";
+          out << "       pop rax\n";
+          out << "       syscall\n";
+          break;
+        }
+        case Operation::SYSCALL3: {
+          out << "       ;; -- syscall3 --\n";
+          out << "       pop rdx\n";
+          out << "       pop rsi\n";
+          out << "       pop rdi\n";
+          out << "       pop rax\n";
+          out << "       syscall\n";
           break;
         }
       }

@@ -3,62 +3,52 @@
 namespace pile {
   namespace parser {
     OperationData parse_word_as_op(const std::string& word) {
-      static_assert(OPERATIONS_COUNT == 22, "Update this function when adding new operations");
+      assert_msg(OPERATIONS_COUNT == 24, "Update this function when adding new operations");
 
-      if (pile::utils::is_digit(word)) {
-        return push(std::stoi(word));
-      } else if (word == "+") {
-        return plus();
-      } else if (word == "-") {
-        return minus();
-      } else if (word == "mod") {
-        return mod();
-      } else if (word == "dump") {
-        return dump();
-      } else if (word == ".") {
-        return dump();
-      } else if (word == "dup") {
-        return dup();
-      } else if (word == "dup2") {
-        return dup_two();
-      } else if (word == "drop") {
-        return drop();
-      } else if (word == "swap") {
-        return swap();
-      } else if (word == "mem") {
-        return mem();
-      } else if (word == "<|") {
-        return store();
-      } else if (word == "|>") {
-        return load();
-      } else if (word == "=") {
-        return equals();
-      } else if (word == "if") {
-        return if_op();
-      } else if (word == "else") {
-        return else_op();
-      } else if (word == "end") {
-        return end();
-      } else if (word == ">") {
-        return greater_than();
-      } else if (word == "<") {
-        return less_than();
-      } else if (word == ">=") {
-        return greater_than_or_equal_to();
-      } else if (word == "<=") {
-        return less_than_or_equal_to();
-      } else if (word == "while") {
-        return while_op();
-      } else if (word == "do") {
-        return do_op();
-      } else {
-        spdlog::error("Unknown operation: {}", word);
-        exit(1);
-      }
+      std::unordered_map<std::string, OperationData> op_map = {
+          {"+", plus()},
+          {"-", minus()},
+          // {"*", times()},
+          {"mod", mod()},
+          {"dump", dump()},
+          {".", dump()},
+          {"dup", dup()},
+          {"dup2", dup_two()},
+          {"drop", drop()},
+          {"swap", swap()},
+          {"mem", mem()},
+          {"<|", store()},
+          {"|>", load()},
+          {"syscall1", syscall1()},
+          {"syscall3", syscall3()},
+          {"=", equals()},
+          {"if", if_op()},
+          {"else", else_op()},
+          {"end", end()},
+          {">", greater_than()},
+          {"<", less_than()},
+          {">=", greater_than_or_equal_to()},
+          {"<=", less_than_or_equal_to()},
+          {"while", while_op()},
+          {"do", do_op()},
+      };
+
+      // Syscall maps
+      std::unordered_map<std::string, OperationData> syscall_map = {{"SYS_write", push(SYS_write)},
+                                                                    {"SYS_read", push(SYS_read)},
+                                                                    {"SYS_exit", push(SYS_exit)}};
+
+      if (pile::utils::is_digit(word)) return push(std::stoi(word));
+
+      // Check if the words is contained in the op_map
+      if (op_map.find(word) != op_map.end()) return op_map[word];
+      if (syscall_map.find(word) != syscall_map.end()) return syscall_map[word];
+
+      return OperationData{};  // TODO: Perhaps add an unknown operation
     }
 
     std::vector<OperationData> parse_crossreference_blocks(std::vector<OperationData> operations) {
-      static_assert(OPERATIONS_COUNT == 22, "Update this function when adding new operations");
+      assert_msg(OPERATIONS_COUNT == 24, "Update this function when adding new operations");
       // spdlog::set_level(spdlog::level::debug);
 
       pile::stack<int32_t> blocks_stack;
@@ -169,7 +159,8 @@ namespace pile {
     std::vector<OperationData> extract_operations_from_line(const std::string& line) {
       std::vector<OperationData> operations;
       // Remove everything after the '\' character (comments) then split the line by spaces
-      // NOTE: After the addition of the string literals feature, this is will have to be revisited
+      // NOTE: After the addition of the string literals feature, this is will have to be
+      // revisited
       std::vector<std::string> words = pile::utils::split(line.substr(0, line.find('\\')), ' ');
 
       std::transform(words.begin(), words.end(), std::back_inserter(operations), parse_word_as_op);

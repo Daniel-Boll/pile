@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include <csignal>
 #include <iterator>
 #include <pile/repl.hpp>
@@ -115,7 +117,7 @@ namespace pile {
   }
 
   bool Repl::interpret(const std::vector<OperationData> &operations) {
-    static_assert(OPERATIONS_COUNT == 22, "Update this function when adding new operations");
+    assert_msg(OPERATIONS_COUNT == 24, "Update this function when adding new operations");
     // spdlog::set_level(spdlog::level::debug);
 
     auto operation = operations.begin();
@@ -360,6 +362,37 @@ namespace pile {
           const auto address = stack.pop();
           stack.push(memory.get(address));
           break;
+        }
+        case Operation::SYSCALL1: {
+          spdlog::critical("Syscall1 not implemented");
+          break;
+        }
+        case Operation::SYSCALL3: {
+          if (stack.size() < 4) {
+            spdlog::error("Not enough values on the stack to perform syscall3");
+            return false;
+          }
+
+          const auto rdx = stack.pop();
+          const auto rsi = stack.pop();
+          const auto rdi = stack.pop();
+          const auto syscall_number = stack.pop();
+
+          if (syscall_number == SYS_write) {
+            const auto fd = rdi;
+            const auto buffer = rsi;
+            const auto count = rdx;
+
+            if (fd != 1 && fd != 2) {
+              spdlog::error("Unsupported file descriptor {}", fd);
+              return false;
+            }
+
+            fputs(reinterpret_cast<const char *>(memory(buffer, buffer + count).data()),
+                  fd == 1 ? stdout : stderr);
+          } else {
+            spdlog::error("Untreated syscall number {}", syscall_number);
+          }
         }
       }
 
