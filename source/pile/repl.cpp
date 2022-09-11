@@ -52,6 +52,25 @@ namespace pile {
         continue;
       }
 
+      // Check if the line starts with %load
+      if (line.find("%load") == 0) {
+        std::cout << "pile: " << line << std::endl;
+        std::string filename = line.substr(6);
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+          std::cout << "Could not open file " << filename << std::endl;
+          continue;
+        }
+
+        std::string file_contents((std::istreambuf_iterator<char>(file)),
+                                  std::istreambuf_iterator<char>());
+
+        auto operations = parser::extract_operations_from_multiline(file_contents);
+
+        success = interpret(operations);
+        continue;
+      }
+
       if (line == "help") {
         std::cout << "pile is a stack-based programming language" << std::endl;
         std::cout << "you are using it's oficial compiler/interpreter peak which also implements "
@@ -117,7 +136,7 @@ namespace pile {
   }
 
   bool Repl::interpret(const std::vector<OperationData> &operations) {
-    assert_msg(OPERATIONS_COUNT == 24, "Update this function when adding new operations");
+    assert_msg(OPERATIONS_COUNT == 31, "Update this function when adding new operations");
     // spdlog::set_level(spdlog::level::debug);
 
     auto operation = operations.begin();
@@ -209,6 +228,22 @@ namespace pile {
 
           const auto a = stack.pop();
           const auto b = stack.pop();
+          stack.push(a);
+          stack.push(b);
+          break;
+        }
+        case Operation::OVER: {
+          if (stack.size() < 2) {
+            spdlog::error("Not enough values on the stack to perform over");
+            return false;
+          }
+
+          // b a --- b a b
+
+          const auto a = stack.pop();
+          const auto b = stack.pop();
+
+          stack.push(b);
           stack.push(a);
           stack.push(b);
           break;
@@ -350,6 +385,9 @@ namespace pile {
 
           const auto value = stack.pop();
           const auto address = stack.pop();
+
+          spdlog::debug("Inserting value {} at address {}", value, address);
+
           memory.set(address, value);
           break;
         }
@@ -393,6 +431,79 @@ namespace pile {
           } else {
             spdlog::error("Untreated syscall number {}", syscall_number);
           }
+
+          break;
+        }
+        case Operation::AND: {
+          if (stack.size() < 2) {
+            spdlog::error("Not enough values on the stack to perform and");
+            return false;
+          }
+
+          const auto a = stack.pop();
+          const auto b = stack.pop();
+
+          stack.push(a & b);
+          break;
+        }
+        case Operation::OR: {
+          if (stack.size() < 2) {
+            spdlog::error("Not enough values on the stack to perform or");
+            return false;
+          }
+
+          const auto a = stack.pop();
+          const auto b = stack.pop();
+
+          stack.push(a | b);
+          break;
+        }
+        case Operation::XOR: {
+          if (stack.size() < 2) {
+            spdlog::error("Not enough values on the stack to perform xor");
+            return false;
+          }
+
+          const auto a = stack.pop();
+          const auto b = stack.pop();
+
+          stack.push(a ^ b);
+          break;
+        }
+        case Operation::NOT: {
+          if (stack.size() < 1) {
+            spdlog::error("Not enough values on the stack to perform not");
+            return false;
+          }
+
+          const auto a = stack.pop();
+
+          stack.push(~a);
+          break;
+        }
+        case Operation::SHL: {
+          if (stack.size() < 2) {
+            spdlog::error("Not enough values on the stack to perform shl");
+            return false;
+          }
+
+          const auto a = stack.pop();
+          const auto b = stack.pop();
+
+          stack.push(b << a);
+          break;
+        }
+        case Operation::SHR: {
+          if (stack.size() < 2) {
+            spdlog::error("Not enough values on the stack to perform shr");
+            return false;
+          }
+
+          const auto a = stack.pop();
+          const auto b = stack.pop();
+
+          stack.push(b >> a);
+          break;
         }
       }
 

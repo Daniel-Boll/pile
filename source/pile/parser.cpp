@@ -3,7 +3,7 @@
 namespace pile {
   namespace parser {
     OperationData parse_word_as_op(const std::string& word) {
-      assert_msg(OPERATIONS_COUNT == 24, "Update this function when adding new operations");
+      assert_msg(OPERATIONS_COUNT == 31, "Update this function when adding new operations");
 
       std::unordered_map<std::string, OperationData> op_map = {
           {"+", plus()},
@@ -16,6 +16,7 @@ namespace pile {
           {"dup2", dup_two()},
           {"drop", drop()},
           {"swap", swap()},
+          {"over", over()},
           {"mem", mem()},
           {"<|", store()},
           {"|>", load()},
@@ -29,6 +30,14 @@ namespace pile {
           {"<", less_than()},
           {">=", greater_than_or_equal_to()},
           {"<=", less_than_or_equal_to()},
+          {"&", bitwise_and()},
+          {"|", bitwise_or()},
+          {"^", bitwise_xor()},
+          {"!", bitwise_not()},
+          {"<<", shift_left()},
+          {">>", shift_right()},
+          {"shift_left", shift_left()},
+          {"shift_right", shift_right()},
           {"while", while_op()},
           {"do", do_op()},
       };
@@ -48,7 +57,7 @@ namespace pile {
     }
 
     std::vector<OperationData> parse_crossreference_blocks(std::vector<OperationData> operations) {
-      assert_msg(OPERATIONS_COUNT == 24, "Update this function when adding new operations");
+      assert_msg(OPERATIONS_COUNT == 31, "Update this function when adding new operations");
       // spdlog::set_level(spdlog::level::debug);
 
       pile::stack<int32_t> blocks_stack;
@@ -141,6 +150,27 @@ namespace pile {
       std::string line;
       while (std::getline(fileReader, line)) {
         // Split line by spaces
+        // NOTE: After the addition of the string literals feature, this is will have to be
+        // revisited
+        std::vector<std::string> words = pile::utils::split(line.substr(0, line.find('\\')), ' ');
+
+        // Parse each word
+        for (auto& word : words) {
+          if (word.empty()) continue;
+
+          operations.push_back(parse_word_as_op(word));
+        }
+      }
+
+      return parse_crossreference_blocks(operations);
+    }
+
+    std::vector<OperationData> extract_operations_from_multiline(const std::string& lines) {
+      std::vector<std::string> lines_vector = pile::utils::split(lines, '\n');
+      std::vector<OperationData> operations;
+
+      // For each line
+      for (auto& line : lines_vector) {
         // NOTE: After the addition of the string literals feature, this is will have to be
         // revisited
         std::vector<std::string> words = pile::utils::split(line.substr(0, line.find('\\')), ' ');

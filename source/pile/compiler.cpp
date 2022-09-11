@@ -20,7 +20,9 @@ namespace pile {
     out << "global _start\n";
     out << "_start:\n";
 
-    assert_msg(OPERATIONS_COUNT == 24, "Update this function when adding new operations");
+    // TODO: Check on the bitwise operations, they might be wrong
+
+    assert_msg(OPERATIONS_COUNT == 31, "Update this function when adding new operations");
     for (auto& op : operations) {
       out << "  .address_" << op.instruction_counter << ":\n";
       switch (op.operation) {
@@ -184,6 +186,15 @@ namespace pile {
           out << "       push rbx\n";
           break;
         }
+        case Operation::OVER: {
+          out << "       ;; -- OVER --\n";
+          out << "       pop rax\n";
+          out << "       pop rbx\n";
+          out << "       push rbx\n";
+          out << "       push rax\n";
+          out << "       push rbx\n";
+          break;
+        }
         case Operation::MEM: {
           out << "       ;; -- mem --\n";
           out << "       push mem\n";
@@ -218,6 +229,53 @@ namespace pile {
           out << "       pop rdi\n";
           out << "       pop rax\n";
           out << "       syscall\n";
+          break;
+        }
+        case Operation::AND: {
+          out << "       ;; -- and --\n";
+          out << "       pop rax\n";
+          out << "       pop rbx\n";
+          out << "       and rax, rbx\n";
+          out << "       push rax\n";
+          break;
+        }
+        case Operation::OR: {
+          out << "       ;; -- or --\n";
+          out << "       pop rax\n";
+          out << "       pop rbx\n";
+          out << "       or rax, rbx\n";
+          out << "       push rax\n";
+          break;
+        }
+        case Operation::XOR: {
+          out << "       ;; -- or --\n";
+          out << "       pop rax\n";
+          out << "       pop rbx\n";
+          out << "       xor rax, rbx\n";
+          out << "       push rax\n";
+          break;
+        }
+        case Operation::NOT: {
+          out << "       ;; -- not --\n";
+          out << "       pop rax\n";
+          out << "       not rax\n";
+          out << "       push rax\n";
+          break;
+        }
+        case Operation::SHL: {
+          out << "       ;; -- shl --\n";
+          out << "       pop rax\n";
+          out << "       pop rbx\n";
+          out << "       shl rbx, cl\n";
+          out << "       push rbx\n";
+          break;
+        }
+        case Operation::SHR: {
+          out << "       ;; -- shr --\n";
+          out << "       pop rax\n";
+          out << "       pop rbx\n";
+          out << "       shr rbx, cl\n";
+          out << "       push rbx\n";
           break;
         }
       }
