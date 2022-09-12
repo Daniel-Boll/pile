@@ -7,3 +7,7 @@ build/
 .DS_Store
 
 ./example/00-test.pile
+
+*.asm
+*.o
+*.out
