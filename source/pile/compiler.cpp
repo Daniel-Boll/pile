@@ -264,7 +264,7 @@ namespace pile {
         }
         case Operation::SHL: {
           out << "       ;; -- shl --\n";
-          out << "       pop rax\n";
+          out << "       pop rcx\n";
           out << "       pop rbx\n";
           out << "       shl rbx, cl\n";
           out << "       push rbx\n";
@@ -272,7 +272,7 @@ namespace pile {
         }
         case Operation::SHR: {
           out << "       ;; -- shr --\n";
-          out << "       pop rax\n";
+          out << "       pop rcx\n";
           out << "       pop rbx\n";
           out << "       shr rbx, cl\n";
           out << "       push rbx\n";

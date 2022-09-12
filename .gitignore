@@ -5,3 +5,5 @@ build/
 
 # MacOS Cache
 .DS_Store
+
+./example/00-test.pile
