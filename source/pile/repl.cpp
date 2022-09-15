@@ -121,6 +121,10 @@ namespace pile {
       // Try to extract operations from the line
       const auto operations = parser::extract_operations_from_line(line);
 
+      std::for_each(operations.begin(), operations.end(), [](OperationData operation) {
+        std::cout << "Operation: " << operation.get_operation_name() << std::endl;
+      });
+
       success = interpret(operations);
 
       // Time
@@ -133,7 +137,7 @@ namespace pile {
   }
 
   bool Repl::interpret(const std::vector<OperationData> &operations) {
-    assert_msg(OPERATIONS_COUNT == 32, "Update this function when adding new operations");
+    assert_msg(OPERATIONS_COUNT == 33, "Update this function when adding new operations");
     // spdlog::set_level(spdlog::level::debug);
 
     auto operation = operations.begin();
@@ -141,7 +145,7 @@ namespace pile {
       spdlog::debug("Interpreting operation: {}", operation->get_operation_name());
       switch (operation->operation) {
         case Operation::PUSH_STRING: {
-          auto result = pile::utils::unescape_string(operation->string);
+          auto result = pile::utils::unescape_string(operation->string_content);
 
           // Get the std::vector<uint8_t> from the string
           std::vector<uint8_t> bytes;
@@ -149,7 +153,7 @@ namespace pile {
 
           auto address = memory.find_sequence_of_bytes(bytes);
           if (address == -1) {
-            address = memory.allocate_bytes(operation->string.length(), bytes);
+            address = memory.allocate_bytes(operation->string_content.length(), bytes);
           }
 
           stack.push(address);
@@ -419,16 +423,25 @@ namespace pile {
           spdlog::critical("Syscall1 not implemented");
           break;
         }
+        case Operation::SYSCALL3_exclamation:
         case Operation::SYSCALL3: {
           if (stack.size() < 4) {
             spdlog::error("Not enough values on the stack to perform syscall3");
             return false;
           }
 
-          const auto rdx = stack.pop();
-          const auto rsi = stack.pop();
-          const auto rdi = stack.pop();
-          const auto syscall_number = stack.pop();
+          int32_t rdx, rsi, rdi, syscall_number;
+          if (operation->operation == Operation::SYSCALL3_exclamation) {
+            syscall_number = stack.pop();
+            rdi = stack.pop();
+            rsi = stack.pop();
+            rdx = stack.pop();
+          } else {
+            rdx = stack.pop();
+            rsi = stack.pop();
+            rdi = stack.pop();
+            syscall_number = stack.pop();
+          }
 
           if (syscall_number == SYS_write) {
             const auto fd = rdi;
@@ -518,6 +531,10 @@ namespace pile {
 
           stack.push(b >> a);
           break;
+        }
+        default: {
+          spdlog::error("Unknown operation {}", operation->get_operation_name());
+          return false;
         }
       }
 

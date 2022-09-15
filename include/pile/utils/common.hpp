@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cxxopts.hpp>
 #include <fstream>
+#include <numeric>
 #include <pile/parser.hpp>
 #include <pile/utils/byte_array.hpp>
 #include <pile/utils/core.hpp>

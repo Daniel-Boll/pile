@@ -2,7 +2,7 @@
 
 namespace pile {
   namespace parser {
-    std::unordered_map<std::string, OperationData> op_map = {
+    std::unordered_map<std::string, OperationData> op_map({
         {"+", plus()},
         {"-", minus()},
         {"mod", mod()},
@@ -18,6 +18,7 @@ namespace pile {
         {"|>", load()},
         {"syscall1", syscall1()},
         {"syscall3", syscall3()},
+        {"syscall3!", syscall3_exclamation()},
         {"=", equals()},
         {"if", if_op()},
         {"else", else_op()},
@@ -36,16 +37,16 @@ namespace pile {
         {"shift_right", shift_right()},
         {"while", while_op()},
         {"do", do_op()},
-    };
+        {"macro", macro()},
+    });
 
     // Syscall maps
-    std::unordered_map<std::string, OperationData> syscall_map
-        = {{"SYS_write", push_int(SYS_write)},
-           {"SYS_read", push_int(SYS_read)},
-           {"SYS_exit", push_int(SYS_exit)}};
+    std::unordered_map<std::string, OperationData> syscall_map({{"SYS_write", push_int(SYS_write)},
+                                                                {"SYS_read", push_int(SYS_read)},
+                                                                {"SYS_exit", push_int(SYS_exit)}});
 
-    std::unordered_map<std::string, OperationData> utils_map
-        = {{"stdout", push_int(1)}, {"stderr", push_int(2)}};
+    std::unordered_map<std::string, OperationData> utils_map({{"stdout", push_int(1)},
+                                                              {"stderr", push_int(2)}});
 
     TokenData parse_token(const std::string& word) {
       assert_msg(TOKEN_TYPES_COUNT == 3, "Update this function when adding new token types");
@@ -54,39 +55,49 @@ namespace pile {
       if (utils::is_string(word))
         return TokenData{TokenType::STRING_LITERAL, word.substr(1, word.size() - 2)};
 
-      return TokenData{TokenType::BUILTIN_WORD, word};
+      return TokenData{TokenType::WORD, word};
     }
 
     OperationData parse_word_as_op(const TokenData& token) {
-      assert_msg(OPERATIONS_COUNT == 32, "Update this function when adding new operations");
+      assert_msg(OPERATIONS_COUNT == 34, "Update this function when adding new operations");
       assert_msg(TOKEN_TYPES_COUNT == 3, "Update this function when adding new token types");
 
       if (token.type == TokenType::INT) return push_int(std::stoi(token.value));
       if (token.type == TokenType::STRING_LITERAL)
         return push_string(token.value);
-      else if (token.type == TokenType::BUILTIN_WORD) {
+      else if (token.type == TokenType::WORD) {
         auto word = token.value;
         if (op_map.find(word) != op_map.end()) return op_map[word];
         if (syscall_map.find(word) != syscall_map.end()) return syscall_map[word];
-        if (utils_map.find(word) != syscall_map.end()) return utils_map[word];
+        if (utils_map.find(word) != utils_map.end()) return utils_map[word];
+
+        return identifier(word);
       }
 
       return OperationData{};  // TODO: Perhaps add an unknown operation
     }
 
     std::vector<OperationData> parse_crossreference_blocks(std::vector<OperationData> operations) {
-      assert_msg(OPERATIONS_COUNT == 32, "Update this function when adding new operations");
+      assert_msg(OPERATIONS_COUNT == 33, "Update this function when adding new operations");
       // spdlog::set_level(spdlog::level::debug);
 
       pile::stack<int32_t> blocks_stack;
       int32_t index = 0;
 
+      std::unordered_map<std::string, std::vector<OperationData>> macros;
       std::vector<OperationData> new_operations = operations;
       auto operation = new_operations.begin();
+
       while (operation != new_operations.end()) {
         operation->instruction_counter = index++;
 
-        spdlog::debug("Parsing operation: {}", operation->get_operation_name());
+        spdlog::info("Parsing operation: {}", operation->get_operation_name());
+        spdlog::info("Operations ({})",
+                     std::accumulate(std::next(new_operations.begin()), new_operations.end(),
+                                     new_operations[0].get_operation_name(),
+                                     [](const std::string& a, const OperationData& b) {
+                                       return a + ", " + b.get_operation_name();
+                                     }));
 
         switch (operation->operation) {
           case Operation::IF: {
@@ -124,6 +135,24 @@ namespace pile {
               // Where to jump (in this case it will return to the next instruction to the while)
               operation->value = block_op.value;
               block_op.closing_block = operation->instruction_counter + 1;
+            } else if (block_op.operation == Operation::MACRO) {
+              auto macro_begin = block_op.instruction_counter + 2;  // Skip the macro and it's name
+              auto macro_end = operation->instruction_counter + 1;
+
+              // Get all the operations inside the macro
+              std::vector<OperationData> macro_operations;
+              std::copy(new_operations.begin() + macro_begin, new_operations.begin() + macro_end,
+                        std::back_inserter(macro_operations));
+
+              macros.insert({block_op.name, macro_operations});
+
+              spdlog::info("Remove {} --(to)-> {} -- {}", macro_begin - 2, macro_end,
+                           (macro_end - (macro_begin - 2)));
+              for (std::size_t i = 0; i <= (macro_end - (macro_begin - 2)); ++i)
+                new_operations.erase(operation--);
+
+              std::advance(operation, 1);
+              continue;
             } else {
               spdlog::error("Unsupported block type");
               exit(1);
@@ -147,10 +176,55 @@ namespace pile {
             blocks_stack.push(operation->instruction_counter);
             break;
           }
-          default:
+          case Operation::MACRO: {
+            // Check if the next operation is a identifier
+            auto next_operation = operation + 1;
+            if (next_operation->operation != Operation::IDENTIFIER) {
+              spdlog::error(
+                  "Invalid macro definition, it must be followed by an identifier and found {}\n",
+                  next_operation->get_operation_name());
+              exit(1);
+            }
+            blocks_stack.push(operation->instruction_counter);
+            operation->name = next_operation->name;
+            std::advance(operation, 1);
             break;
+          }
+          case Operation::IDENTIFIER: {
+            if (macros.find(operation->name) != macros.end()) {
+              spdlog::info("Found macro: {}", operation->name);
+              auto macro = macros[operation->name];
+              // Print the operations in the macro
+              for (auto& op : macro) {
+                spdlog::info("  {}", op.get_operation_name());
+              }
+
+              // Remove identifier
+              new_operations.erase(operation);
+            } else {
+              spdlog::error("Unknown identifier: {}", operation->name);
+              exit(1);
+            }
+            break;
+          }
+          default: {
+            break;
+          }
         }
+
         std::advance(operation, 1);
+      }
+
+      // FIXME: This is not working properly yet.
+      if (!blocks_stack.empty()) {
+        spdlog::error("Unmatched block{}", blocks_stack.size() > 1 ? "s" : "");
+        // Print the unmatched blocks
+        while (!blocks_stack.empty()) {
+          auto block_ic = blocks_stack.pop();
+          auto block_op = new_operations[block_ic];
+          spdlog::error("    {}", block_op.get_operation_name());
+        }
+        exit(1);
       }
 
       return new_operations;

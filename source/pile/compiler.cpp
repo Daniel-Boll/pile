@@ -37,10 +37,10 @@ namespace pile {
         case Operation::PUSH_STRING: {
           out << "       ;; -- push string --\n";
           out << fmt::format("       push string_{}\n", strings.size());
-          out << "       mov rax, " << op.string.length() << "\n";
+          out << "       mov rax, " << op.string_content.length() << "\n";
           out << "       push rax\n";
 
-          strings.emplace_back(pile::utils::unescape_string(op.string));
+          strings.emplace_back(pile::utils::unescape_string(op.string_content));
           break;
         }
         case Operation::PLUS: {
@@ -240,6 +240,15 @@ namespace pile {
           out << "       pop rsi\n";
           out << "       pop rdi\n";
           out << "       pop rax\n";
+          out << "       syscall\n";
+          break;
+        }
+        case Operation::SYSCALL3_exclamation: {
+          out << "       ;; -- syscall3! --\n";
+          out << "       pop rax\n";
+          out << "       pop rdi\n";
+          out << "       pop rsi\n";
+          out << "       pop rdx\n";
           out << "       syscall\n";
           break;
         }
