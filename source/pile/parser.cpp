@@ -2,62 +2,80 @@
 
 namespace pile {
   namespace parser {
-    OperationData parse_word_as_op(const std::string& word) {
-      assert_msg(OPERATIONS_COUNT == 31, "Update this function when adding new operations");
+    std::unordered_map<std::string, OperationData> op_map = {
+        {"+", plus()},
+        {"-", minus()},
+        {"mod", mod()},
+        {"dump", dump()},
+        {".", dump()},
+        {"dup", dup()},
+        {"dup2", dup_two()},
+        {"drop", drop()},
+        {"swap", swap()},
+        {"over", over()},
+        {"mem", mem()},
+        {"<|", store()},
+        {"|>", load()},
+        {"syscall1", syscall1()},
+        {"syscall3", syscall3()},
+        {"=", equals()},
+        {"if", if_op()},
+        {"else", else_op()},
+        {"end", end()},
+        {">", greater_than()},
+        {"<", less_than()},
+        {">=", greater_than_or_equal_to()},
+        {"<=", less_than_or_equal_to()},
+        {"&", bitwise_and()},
+        {"|", bitwise_or()},
+        {"^", bitwise_xor()},
+        {"!", bitwise_not()},
+        {"<<", shift_left()},
+        {">>", shift_right()},
+        {"shift_left", shift_left()},
+        {"shift_right", shift_right()},
+        {"while", while_op()},
+        {"do", do_op()},
+    };
 
-      std::unordered_map<std::string, OperationData> op_map = {
-          {"+", plus()},
-          {"-", minus()},
-          // {"*", times()},
-          {"mod", mod()},
-          {"dump", dump()},
-          {".", dump()},
-          {"dup", dup()},
-          {"dup2", dup_two()},
-          {"drop", drop()},
-          {"swap", swap()},
-          {"over", over()},
-          {"mem", mem()},
-          {"<|", store()},
-          {"|>", load()},
-          {"syscall1", syscall1()},
-          {"syscall3", syscall3()},
-          {"=", equals()},
-          {"if", if_op()},
-          {"else", else_op()},
-          {"end", end()},
-          {">", greater_than()},
-          {"<", less_than()},
-          {">=", greater_than_or_equal_to()},
-          {"<=", less_than_or_equal_to()},
-          {"&", bitwise_and()},
-          {"|", bitwise_or()},
-          {"^", bitwise_xor()},
-          {"!", bitwise_not()},
-          {"<<", shift_left()},
-          {">>", shift_right()},
-          {"shift_left", shift_left()},
-          {"shift_right", shift_right()},
-          {"while", while_op()},
-          {"do", do_op()},
-      };
+    // Syscall maps
+    std::unordered_map<std::string, OperationData> syscall_map
+        = {{"SYS_write", push_int(SYS_write)},
+           {"SYS_read", push_int(SYS_read)},
+           {"SYS_exit", push_int(SYS_exit)}};
 
-      // Syscall maps
-      std::unordered_map<std::string, OperationData> syscall_map = {{"SYS_write", push(SYS_write)},
-                                                                    {"SYS_read", push(SYS_read)},
-                                                                    {"SYS_exit", push(SYS_exit)}};
+    std::unordered_map<std::string, OperationData> utils_map
+        = {{"stdout", push_int(1)}, {"stderr", push_int(2)}};
 
-      if (pile::utils::is_digit(word)) return push(std::stoi(word));
+    TokenData parse_token(const std::string& word) {
+      assert_msg(TOKEN_TYPES_COUNT == 3, "Update this function when adding new token types");
 
-      // Check if the words is contained in the op_map
-      if (op_map.find(word) != op_map.end()) return op_map[word];
-      if (syscall_map.find(word) != syscall_map.end()) return syscall_map[word];
+      if (utils::is_digit(word)) return TokenData{TokenType::INT, word};
+      if (utils::is_string(word))
+        return TokenData{TokenType::STRING_LITERAL, word.substr(1, word.size() - 2)};
+
+      return TokenData{TokenType::BUILTIN_WORD, word};
+    }
+
+    OperationData parse_word_as_op(const TokenData& token) {
+      assert_msg(OPERATIONS_COUNT == 32, "Update this function when adding new operations");
+      assert_msg(TOKEN_TYPES_COUNT == 3, "Update this function when adding new token types");
+
+      if (token.type == TokenType::INT) return push_int(std::stoi(token.value));
+      if (token.type == TokenType::STRING_LITERAL)
+        return push_string(token.value);
+      else if (token.type == TokenType::BUILTIN_WORD) {
+        auto word = token.value;
+        if (op_map.find(word) != op_map.end()) return op_map[word];
+        if (syscall_map.find(word) != syscall_map.end()) return syscall_map[word];
+        if (utils_map.find(word) != syscall_map.end()) return utils_map[word];
+      }
 
       return OperationData{};  // TODO: Perhaps add an unknown operation
     }
 
     std::vector<OperationData> parse_crossreference_blocks(std::vector<OperationData> operations) {
-      assert_msg(OPERATIONS_COUNT == 31, "Update this function when adding new operations");
+      assert_msg(OPERATIONS_COUNT == 32, "Update this function when adding new operations");
       // spdlog::set_level(spdlog::level::debug);
 
       pile::stack<int32_t> blocks_stack;
@@ -149,16 +167,14 @@ namespace pile {
 
       std::string line;
       while (std::getline(fileReader, line)) {
-        // Split line by spaces
-        // NOTE: After the addition of the string literals feature, this is will have to be
-        // revisited
-        std::vector<std::string> words = pile::utils::split(line.substr(0, line.find('\\')), ' ');
+        auto words
+            = utils::squish_strings(utils::split(utils::split_unless_in_quotes(line, '\\'), ' '));
 
         // Parse each word
         for (auto& word : words) {
           if (word.empty()) continue;
 
-          operations.push_back(parse_word_as_op(word));
+          operations.push_back(parse_word_as_op(parse_token(word)));
         }
       }
 
@@ -169,17 +185,14 @@ namespace pile {
       std::vector<std::string> lines_vector = pile::utils::split(lines, '\n');
       std::vector<OperationData> operations;
 
-      // For each line
       for (auto& line : lines_vector) {
-        // NOTE: After the addition of the string literals feature, this is will have to be
-        // revisited
-        std::vector<std::string> words = pile::utils::split(line.substr(0, line.find('\\')), ' ');
+        auto words
+            = utils::squish_strings(utils::split(utils::split_unless_in_quotes(line, '\\'), ' '));
 
-        // Parse each word
         for (auto& word : words) {
           if (word.empty()) continue;
 
-          operations.push_back(parse_word_as_op(word));
+          operations.push_back(parse_word_as_op(parse_token(word)));
         }
       }
 
@@ -188,12 +201,11 @@ namespace pile {
 
     std::vector<OperationData> extract_operations_from_line(const std::string& line) {
       std::vector<OperationData> operations;
-      // Remove everything after the '\' character (comments) then split the line by spaces
-      // NOTE: After the addition of the string literals feature, this is will have to be
-      // revisited
-      std::vector<std::string> words = pile::utils::split(line.substr(0, line.find('\\')), ' ');
+      auto words
+          = utils::squish_strings(utils::split(utils::split_unless_in_quotes(line, '\\'), ' '));
 
-      std::transform(words.begin(), words.end(), std::back_inserter(operations), parse_word_as_op);
+      std::transform(words.begin(), words.end(), std::back_inserter(operations),
+                     [](auto word) { return parse_word_as_op(parse_token(word)); });
 
       return parse_crossreference_blocks(operations);
     }

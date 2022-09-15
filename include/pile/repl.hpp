@@ -2,6 +2,9 @@
 
 #include <pile/utils/common.hpp>
 
+#define MEMORY_CAPACITY 320000
+#define STRING_CAPACITY 320000
+
 namespace pile {
   class Repl {
   public:

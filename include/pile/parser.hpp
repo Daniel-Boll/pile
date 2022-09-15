@@ -7,7 +7,8 @@
 
 enum class Operation {
   // Stack manipulation
-  PUSH,
+  PUSH_INT,
+  PUSH_STRING,
   DUP,
   DUP2,
   DUMP,
@@ -53,20 +54,31 @@ enum class Operation {
   // Block control
   END
 };
-#define OPERATIONS_COUNT 31  // Last operation `over`
+#define OPERATIONS_COUNT 32  // Last operation `push_string`
+
+enum class TokenType { BUILTIN_WORD, INT, STRING_LITERAL };
+#define TOKEN_TYPES_COUNT 3  // Last token type `STRING_LITERAL`
+
+struct TokenData {
+  TokenType type;
+  std::string value;
+};
 
 struct OperationData {
   Operation operation;
   int32_t instruction_counter;
 
-  // NOTE: This perhaps should be a union
+  // NOTE: perhaps should be a union
   int32_t value;
+  std::string string;
   int32_t closing_block;
 
   std::string get_operation_name() const {
     switch (operation) {
-      case Operation::PUSH:
-        return "PUSH";
+      case Operation::PUSH_INT:
+        return "PUSH_INT";
+      case Operation::PUSH_STRING:
+        return "PUSH_STRING";
       case Operation::DUP:
         return "DUP";
       case Operation::DUP2:
@@ -135,16 +147,19 @@ struct OperationData {
 
 namespace pile {
   namespace parser {
-
-    OperationData parse_word_as_op(const std::string& word);
+    OperationData parse_word_as_op(const TokenData& token);
+    TokenData parse_token(const std::string& word);
     std::vector<OperationData> parse_crossreference_blocks(std::vector<OperationData> operations);
 
     std::vector<OperationData> extract_operations_from_file(const std::string& file);
     std::vector<OperationData> extract_operations_from_multiline(const std::string& lines);
     std::vector<OperationData> extract_operations_from_line(const std::string& line);
 
-    inline OperationData push(int32_t value) {
-      return OperationData{.operation = Operation::PUSH, .value = value};
+    inline OperationData push_int(int32_t value) {
+      return OperationData{.operation = Operation::PUSH_INT, .value = value};
+    }
+    inline OperationData push_string(const std::string& value) {
+      return OperationData{.operation = Operation::PUSH_STRING, .string = value};
     }
     inline OperationData plus() { return OperationData{.operation = Operation::PLUS}; }
     inline OperationData minus() { return OperationData{.operation = Operation::MINUS}; }

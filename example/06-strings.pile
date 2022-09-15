@@ -1,0 +1,9 @@
+SYS_write stdout "Hello, world\n" syscall3
+
+macro write 
+  \ size address stdout SYS_write
+  swap
+  stdout SYS_write syscall3!
+end
+
+"Hello, world\n" write

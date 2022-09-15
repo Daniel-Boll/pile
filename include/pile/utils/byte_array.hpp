@@ -28,5 +28,58 @@ namespace pile {
       }
       return result;
     }
+
+    // Set a sequence of bytes in the memory and return it's address
+    int32_t allocate_bytes(int32_t size, const std::vector<byte>& bytes) {
+      int32_t address = 0;
+      for (int32_t i = 0; i < data.size(); i++) {
+        if (data[i] == 0) {
+          address = i;
+          break;
+        }
+      }
+      for (int32_t i = 0; i < size; i++) {
+        data[address + i] = bytes[i];
+      }
+      return address;
+    }
+
+    // Find a sequence of bytes in the memory and return it's address or -1 if not found
+    int32_t find_sequence_of_bytes(const std::vector<byte>& bytes) {
+      int32_t address = -1;
+      for (int32_t i = 0; i < data.size(); i++) {
+        if (data[i] == bytes[0]) {
+          address = i;
+          for (int32_t j = 1; j < bytes.size(); j++) {
+            if (data[i + j] != bytes[j]) {
+              address = -1;
+              break;
+            }
+          }
+          if (address != -1) {
+            break;
+          }
+        }
+      }
+      return address;
+    }
   };
 }  // namespace pile
+// int32_t index = start;
+// while (index + size <= end) {
+//   bool found = true;
+//   for (int32_t i = 0; i < size; i++) {
+//     if (data[index + i] != 0) {
+//       found = false;
+//       break;
+//     }
+//   }
+//   if (found) {
+//     for (int32_t i = 0; i < size; i++) {
+//       data[index + i] = bytes[i];
+//     }
+//     return index;
+//   }
+//   index++;
+// }
+// return -1;

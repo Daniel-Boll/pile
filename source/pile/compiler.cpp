@@ -1,5 +1,8 @@
 #include <pile/compiler.hpp>
 #include <pile/repl.hpp>
+#include <pile/utils/utils.hpp>
+
+#include "pile/utils/stack.hpp"
 
 inline static std::string asm_plus() {
   return R"(
@@ -20,15 +23,24 @@ namespace pile {
     out << "global _start\n";
     out << "_start:\n";
 
-    // TODO: Check on the bitwise operations, they might be wrong
+    std::vector<std::string> strings;
 
-    assert_msg(OPERATIONS_COUNT == 31, "Update this function when adding new operations");
+    assert_msg(OPERATIONS_COUNT == 32, "Update this function when adding new operations");
     for (auto& op : operations) {
       out << "  .address_" << op.instruction_counter << ":\n";
       switch (op.operation) {
-        case Operation::PUSH: {
-          out << fmt::format("       ;; -- push {} --\n", op.value);
+        case Operation::PUSH_INT: {
+          out << fmt::format("       ;; -- push integer {} --\n", op.value);
           out << fmt::format("       push {}\n", op.value);
+          break;
+        }
+        case Operation::PUSH_STRING: {
+          out << "       ;; -- push string --\n";
+          out << fmt::format("       push string_{}\n", strings.size());
+          out << "       mov rax, " << op.string.length() << "\n";
+          out << "       push rax\n";
+
+          strings.emplace_back(pile::utils::unescape_string(op.string));
           break;
         }
         case Operation::PLUS: {
@@ -288,6 +300,26 @@ namespace pile {
     out << "       syscall\n";
     out << "  segment .bss\n";
     out << "       mem: resq " << MEMORY_CAPACITY << "\n";
+    out << "  segment .data\n";
+
+    // Print the value as hex 0xFF all caps
+    auto hexify = [](uint64_t value) {
+      std::stringstream ss;
+      ss << "0x" << std::hex << std::uppercase << value;
+      return ss.str();
+    };
+
+    for (int32_t i = 0; i < strings.size(); i++) {
+      auto string = strings[i];
+      std::vector<uint8_t> bytes;
+      std::copy(string.begin(), string.end(), std::back_inserter(bytes));
+
+      out << "        string_" << i << ": db ";
+      for (auto byte : bytes) {
+        out << hexify(byte) << ",";
+      }
+      out << "0x0\n";
+    }
 
     out.close();
 

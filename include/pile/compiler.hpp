@@ -7,6 +7,7 @@ namespace pile {
 }
 
 #define MEMORY_CAPACITY 640000
+#define STRING_CAPACITY 640000
 
 // TODO: probably declare all those helper functions in a separate file and include them through the
 // -i flag in the nasm all this when doing the installation so we can throw the included file in the

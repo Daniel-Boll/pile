@@ -5,8 +5,10 @@
 #include <pile/repl.hpp>
 
 namespace pile {
-  Repl::Repl() : memory(1024) {}
+  Repl::Repl() : memory(MEMORY_CAPACITY + STRING_CAPACITY) {}
 
+  // FIXME: The repl with a custom memory size will also have to declare the capacity of dedicated
+  // part of the string
   Repl::Repl(int32_t memory_size) : memory(memory_size) {}
 
   void Repl::run() {
@@ -65,9 +67,14 @@ namespace pile {
         std::string file_contents((std::istreambuf_iterator<char>(file)),
                                   std::istreambuf_iterator<char>());
 
+        auto start = std::chrono::high_resolution_clock::now();
         auto operations = parser::extract_operations_from_multiline(file_contents);
 
         success = interpret(operations);
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        if (timing) std::cout << "Time: " << duration.count() << " microseconds" << std::endl;
+
         continue;
       }
 
@@ -114,16 +121,6 @@ namespace pile {
       // Try to extract operations from the line
       const auto operations = parser::extract_operations_from_line(line);
 
-      // std::for_each(operations.begin(), operations.end(), [=](OperationData op) {
-      //   std::cout << "Operation: " << op.get_operation_name() << std::endl
-      //             << "Value: " << op.value << std::endl
-      //             << "Instruction_counter: " << op.instruction_counter << std::endl
-      //             << "Closing_block: " << op.closing_block << std::endl;
-      //
-      //   // If not the last operation, print a newline
-      //   std::cout << std::endl;
-      // });
-
       success = interpret(operations);
 
       // Time
@@ -136,14 +133,31 @@ namespace pile {
   }
 
   bool Repl::interpret(const std::vector<OperationData> &operations) {
-    assert_msg(OPERATIONS_COUNT == 31, "Update this function when adding new operations");
+    assert_msg(OPERATIONS_COUNT == 32, "Update this function when adding new operations");
     // spdlog::set_level(spdlog::level::debug);
 
     auto operation = operations.begin();
     while (operation != operations.end()) {
       spdlog::debug("Interpreting operation: {}", operation->get_operation_name());
       switch (operation->operation) {
-        case Operation::PUSH: {
+        case Operation::PUSH_STRING: {
+          auto result = pile::utils::unescape_string(operation->string);
+
+          // Get the std::vector<uint8_t> from the string
+          std::vector<uint8_t> bytes;
+          std::copy(result.begin(), result.end(), std::back_inserter(bytes));
+
+          auto address = memory.find_sequence_of_bytes(bytes);
+          if (address == -1) {
+            address = memory.allocate_bytes(operation->string.length(), bytes);
+          }
+
+          stack.push(address);
+          stack.push(result.length());
+
+          break;
+        }
+        case Operation::PUSH_INT: {
           stack.push(operation->value);
           break;
         }
@@ -249,8 +263,8 @@ namespace pile {
           break;
         }
         case Operation::MEM: {
-          stack.push(0);  // There is no such thing as address of .bss section, so in simulation we
-                          // just push 0
+          stack.push(STRING_CAPACITY);  // There is no such thing as address of .bss section, so in
+                                        // simulation we just push 0
           break;
         }
         case Operation::EQUAL: {
