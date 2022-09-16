@@ -25,9 +25,11 @@ namespace pile {
 
     std::vector<std::string> strings;
 
-    assert_msg(OPERATIONS_COUNT == 32, "Update this function when adding new operations");
+    assert_msg(OPERATIONS_COUNT == 38, "Update this function when adding new operations");
+    int32_t greatest_address = 0;
     for (auto& op : operations) {
       out << "  .address_" << op.instruction_counter << ":\n";
+      greatest_address = std::max(greatest_address, op.instruction_counter);
       switch (op.operation) {
         case Operation::PUSH_INT: {
           out << fmt::format("       ;; -- push integer {} --\n", op.value);
@@ -35,6 +37,8 @@ namespace pile {
           break;
         }
         case Operation::PUSH_STRING: {
+          // NOTE: To create a more sofisticated string table it should check if the sequence of
+          // bytes isnt already in the table
           out << "       ;; -- push string --\n";
           out << fmt::format("       push string_{}\n", strings.size());
           out << "       mov rax, " << op.string_content.length() << "\n";
@@ -117,13 +121,14 @@ namespace pile {
         }
         case Operation::END: {
           // Validate if there is a value
-          bool correct_address_interval = (op.value >= 0 && op.value <= operations.size() - 1);
-          if (!correct_address_interval) {
-            spdlog::error("The `end` instruction must have a valid address to jump to");
-            exit(1);
-          }
+          // bool correct_address_interval = (op.value >= 0 && op.value <= operations.size() - 1);
+          // if (!correct_address_interval) {
+          //   spdlog::error("The `end` instruction must have a valid address to jump to");
+          //   exit(1);
+          // }
           out << "       ;; -- end --\n";
-          out << "       jmp .address_" << op.value << "\n";
+          if (op.value != op.instruction_counter + 1)
+            out << "       jmp .address_" << op.value << "\n";
           break;
         }
         case Operation::WHILE: {
@@ -243,6 +248,13 @@ namespace pile {
           out << "       syscall\n";
           break;
         }
+        case Operation::SYSCALL1_exclamation: {
+          out << "       ;; -- syscall1! --\n";
+          out << "       pop rax\n";
+          out << "       pop rdi\n";
+          out << "       syscall\n";
+          break;
+        }
         case Operation::SYSCALL3_exclamation: {
           out << "       ;; -- syscall3! --\n";
           out << "       pop rax\n";
@@ -299,10 +311,34 @@ namespace pile {
           out << "       push rbx\n";
           break;
         }
+        case Operation::MACRO: {
+          spdlog::critical(
+              "Unreachable code. If we reach this point it means that the parser is "
+              "broken");
+          exit(1);
+        }
+        case Operation::IDENTIFIER: {
+          spdlog::critical(
+              "Unreachable code. If we reach this point it means that the parser is "
+              "broken");
+          exit(1);
+        }
+        case Operation::INCLUDE: {
+          spdlog::critical(
+              "Unreachable code. If we reach this point it means that the parser is "
+              "broken");
+          exit(1);
+        }
+        case Operation::UNKNOWN: {
+          spdlog::critical(
+              "Unreachable code. If we reach this point it means that the parser is "
+              "broken");
+          exit(1);
+        }
       }
     }
 
-    out << "  .address_" << operations.size() << ":\n";
+    out << "  .address_" << greatest_address + 1 << ":\n";
     out << "       ;; -- exit -- \n";
     out << "       mov rax, SYS_EXIT\n";
     out << "       mov rdi, 0\n";

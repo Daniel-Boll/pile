@@ -17,6 +17,7 @@ namespace pile {
         {"<|", store()},
         {"|>", load()},
         {"syscall1", syscall1()},
+        {"syscall1!", syscall1_exclamation()},
         {"syscall3", syscall3()},
         {"syscall3!", syscall3_exclamation()},
         {"=", equals()},
@@ -38,20 +39,14 @@ namespace pile {
         {"while", while_op()},
         {"do", do_op()},
         {"macro", macro()},
+        {"include", include()},
     });
 
-    // Syscall maps
-    std::unordered_map<std::string, OperationData> syscall_map({{"SYS_write", push_int(SYS_write)},
-                                                                {"SYS_read", push_int(SYS_read)},
-                                                                {"SYS_exit", push_int(SYS_exit)}});
-
-    std::unordered_map<std::string, OperationData> utils_map({{"stdout", push_int(1)},
-                                                              {"stderr", push_int(2)}});
-
     TokenData parse_token(const std::string& word) {
-      assert_msg(TOKEN_TYPES_COUNT == 3, "Update this function when adding new token types");
+      assert_msg(TOKEN_TYPES_COUNT == 4, "Update this function when adding new token types");
 
       if (utils::is_digit(word)) return TokenData{TokenType::INT, word};
+      if (utils::is_char(word)) return TokenData{TokenType::CHARACTER_LITERAL, word};
       if (utils::is_string(word))
         return TokenData{TokenType::STRING_LITERAL, word.substr(1, word.size() - 2)};
 
@@ -59,17 +54,22 @@ namespace pile {
     }
 
     OperationData parse_word_as_op(const TokenData& token) {
-      assert_msg(OPERATIONS_COUNT == 34, "Update this function when adding new operations");
-      assert_msg(TOKEN_TYPES_COUNT == 3, "Update this function when adding new token types");
+      assert_msg(TOKEN_TYPES_COUNT == 4, "Update this function when adding new token types");
 
-      if (token.type == TokenType::INT) return push_int(std::stoi(token.value));
-      if (token.type == TokenType::STRING_LITERAL)
+      if (token.type == TokenType::INT)
+        return push_int(std::stoi(token.value));
+      else if (token.type == TokenType::STRING_LITERAL)
         return push_string(token.value);
-      else if (token.type == TokenType::WORD) {
+      else if (token.type == TokenType::CHARACTER_LITERAL) {
+        // Remove the first and last character
+        auto character = (token.value.substr(1, token.value.size() - 2)).c_str();
+        int32_t ascii_code = character[0];
+
+        return (ascii_code == 0) ? push_int(32) : push_int(ascii_code);
+      } else if (token.type == TokenType::WORD) {
         auto word = token.value;
+
         if (op_map.find(word) != op_map.end()) return op_map[word];
-        if (syscall_map.find(word) != syscall_map.end()) return syscall_map[word];
-        if (utils_map.find(word) != utils_map.end()) return utils_map[word];
 
         return identifier(word);
       }
@@ -77,27 +77,29 @@ namespace pile {
       return OperationData{};  // TODO: Perhaps add an unknown operation
     }
 
-    std::vector<OperationData> parse_crossreference_blocks(std::vector<OperationData> operations) {
-      assert_msg(OPERATIONS_COUNT == 33, "Update this function when adding new operations");
+    std::vector<OperationData> parse_crossreference_blocks(std::vector<OperationData> operations,
+                                                           bool remove_macros) {
+      assert_msg(OPERATIONS_COUNT == 38, "Update this function when adding new operations");
       // spdlog::set_level(spdlog::level::debug);
 
       pile::stack<int32_t> blocks_stack;
       int32_t index = 0;
 
-      std::unordered_map<std::string, std::vector<OperationData>> macros;
+      std::unordered_map<std::string, Macro> macros;
       std::vector<OperationData> new_operations = operations;
       auto operation = new_operations.begin();
 
       while (operation != new_operations.end()) {
         operation->instruction_counter = index++;
 
-        spdlog::info("Parsing operation: {}", operation->get_operation_name());
-        spdlog::info("Operations ({})",
-                     std::accumulate(std::next(new_operations.begin()), new_operations.end(),
-                                     new_operations[0].get_operation_name(),
-                                     [](const std::string& a, const OperationData& b) {
-                                       return a + ", " + b.get_operation_name();
-                                     }));
+        spdlog::debug("Parsing operation: {} ({})", operation->get_operation_name(),
+                      operation->instruction_counter);
+        spdlog::debug("Operations ({})",
+                      std::accumulate(std::next(new_operations.begin()), new_operations.end(),
+                                      new_operations[0].get_operation_name(),
+                                      [](const std::string& a, const OperationData& b) {
+                                        return a + ", " + b.get_operation_name();
+                                      }));
 
         switch (operation->operation) {
           case Operation::IF: {
@@ -105,16 +107,21 @@ namespace pile {
             break;
           }
           case Operation::ELSE: {
-            auto if_block = blocks_stack.pop();
-            if (new_operations[if_block].operation != Operation::IF) {
-              spdlog::error("Invalid else block, it must follow an if block");
+            auto if_ic = blocks_stack.pop();
+            auto if_op = std::find_if(
+                new_operations.begin(), new_operations.end(),
+                [if_ic](const OperationData& op) { return op.instruction_counter == if_ic; });
+
+            if (if_op->operation != Operation::IF) {
+              spdlog::error("Invalid else block, it must follow an if block and it found {}",
+                            if_op->get_operation_name());
               exit(1);
             }
 
             blocks_stack.push(operation->instruction_counter);
 
             // Set the closing block of the if block to the else block body
-            new_operations[if_block].closing_block = operation->instruction_counter + 1;
+            if_op->closing_block = operation->instruction_counter + 1;
             break;
           }
           case Operation::END: {
@@ -124,41 +131,74 @@ namespace pile {
             }
 
             auto block_ic = blocks_stack.pop();
-            auto block_op = new_operations[block_ic];
+            auto block_op = std::find_if(
+                new_operations.begin(), new_operations.end(),
+                [block_ic](const OperationData& op) { return op.instruction_counter == block_ic; });
 
-            if (block_op.operation == Operation::IF || block_op.operation == Operation::ELSE) {
-              // Where to jump (in this case, the next instruction)
-              operation->value = operation->instruction_counter + 1;
-
-              block_op.closing_block = operation->instruction_counter;
-            } else if (block_op.operation == Operation::DO) {
-              // Where to jump (in this case it will return to the next instruction to the while)
-              operation->value = block_op.value;
-              block_op.closing_block = operation->instruction_counter + 1;
-            } else if (block_op.operation == Operation::MACRO) {
-              auto macro_begin = block_op.instruction_counter + 2;  // Skip the macro and it's name
-              auto macro_end = operation->instruction_counter + 1;
-
-              // Get all the operations inside the macro
-              std::vector<OperationData> macro_operations;
-              std::copy(new_operations.begin() + macro_begin, new_operations.begin() + macro_end,
-                        std::back_inserter(macro_operations));
-
-              macros.insert({block_op.name, macro_operations});
-
-              spdlog::info("Remove {} --(to)-> {} -- {}", macro_begin - 2, macro_end,
-                           (macro_end - (macro_begin - 2)));
-              for (std::size_t i = 0; i <= (macro_end - (macro_begin - 2)); ++i)
-                new_operations.erase(operation--);
-
-              std::advance(operation, 1);
-              continue;
-            } else {
-              spdlog::error("Unsupported block type");
+            if (block_op == new_operations.end()) {
+              spdlog::error("Invalid block instruction counter");
               exit(1);
             }
 
-            new_operations[block_op.instruction_counter] = block_op;
+            if (block_op->operation == Operation::IF || block_op->operation == Operation::ELSE) {
+              // Where to jump (in this case, the next instruction)
+              operation->value = operation->instruction_counter + 1;
+
+              block_op->closing_block = operation->instruction_counter;
+            } else if (block_op->operation == Operation::DO) {
+              // Where to jump (in this case it will return to the next instruction to the while)
+              operation->value = block_op->value;
+              block_op->closing_block = operation->instruction_counter + 1;
+            } else if (block_op->operation == Operation::MACRO) {
+              auto macro_begin_it
+                  = std::find_if(new_operations.begin(), new_operations.end(),
+                                 [block_op](const OperationData& op) {
+                                   return op.instruction_counter == block_op->instruction_counter;
+                                 });
+              auto macro_end_it
+                  = std::find_if(new_operations.begin(), new_operations.end(),
+                                 [operation](const OperationData& op) {
+                                   return op.instruction_counter == operation->instruction_counter;
+                                 });
+
+              if (macro_begin_it == new_operations.end()) {
+                spdlog::error("Invalid macro begin");
+                exit(1);
+              }
+              if (macro_end_it == new_operations.end()) {
+                spdlog::error("Invalid macro end");
+                exit(1);
+              }
+
+              auto macro_begin = macro_begin_it - new_operations.begin();
+              auto macro_end = macro_end_it - new_operations.begin();
+
+              auto condition
+                  = new_operations[macro_begin].operation == Operation::MACRO
+                    && new_operations[macro_begin + 1].operation == Operation::IDENTIFIER;
+
+              if (!condition) {
+                spdlog::error("Invalid macro definition with {} {}",
+                              new_operations[macro_begin].get_operation_name(),
+                              new_operations[macro_begin + 1].get_operation_name());
+                exit(1);
+              }
+
+              // Get all the operations inside the macro
+              std::vector<OperationData> macro_operations;
+              std::copy(new_operations.begin() + macro_begin + 2,
+                        new_operations.begin() + macro_end, std::back_inserter(macro_operations));
+
+              macros.insert({block_op->name, Macro{.operations = macro_operations,
+                                                   .range = {macro_begin, macro_end}}});
+
+              // for (std::size_t i = 0; i <= (macro_end - (macro_begin - 2)); ++i)
+              //   new_operations.erase(operation--);
+            } else {
+              spdlog::error("Unsupported block type {}", block_op->get_operation_name());
+              exit(1);
+            }
+
             break;
           }
           case Operation::WHILE: {
@@ -166,13 +206,16 @@ namespace pile {
             break;
           }
           case Operation::DO: {
-            auto while_block = blocks_stack.pop();
-            if (new_operations[while_block].operation != Operation::WHILE) {
+            auto while_ip = blocks_stack.pop();
+            auto while_op = std::find_if(
+                new_operations.begin(), new_operations.end(),
+                [while_ip](const OperationData& op) { return op.instruction_counter == while_ip; });
+            if (while_op->operation != Operation::WHILE) {
               spdlog::error("Invalid do block, it must follow a while block");
               exit(1);
             }
 
-            operation->value = while_block + 1;
+            operation->value = while_op->instruction_counter + 1;
             blocks_stack.push(operation->instruction_counter);
             break;
           }
@@ -187,25 +230,64 @@ namespace pile {
             }
             blocks_stack.push(operation->instruction_counter);
             operation->name = next_operation->name;
+
             std::advance(operation, 1);
             break;
           }
           case Operation::IDENTIFIER: {
             if (macros.find(operation->name) != macros.end()) {
-              spdlog::info("Found macro: {}", operation->name);
               auto macro = macros[operation->name];
-              // Print the operations in the macro
-              for (auto& op : macro) {
-                spdlog::info("  {}", op.get_operation_name());
-              }
+
+              // Print macros
+              // spdlog::debug("Found macro: {}", operation->name);
+              // for (const auto& op : macro.operations) {
+              //   spdlog::debug("{}", op.get_operation_name());
+              // }
 
               // Remove identifier
-              new_operations.erase(operation);
+              operation = new_operations.erase(operation);
+              operation = new_operations.insert(operation, macro.operations.begin(),
+                                                macro.operations.end());
+              continue;
             } else {
               spdlog::error("Unknown identifier: {}", operation->name);
               exit(1);
             }
             break;
+          }
+          case Operation::INCLUDE: {
+            auto next_operation = operation + 1;
+
+            if (next_operation->operation != Operation::PUSH_STRING) {
+              spdlog::error("Invalid include, it must be followed by a string and found {}",
+                            next_operation->get_operation_name());
+              exit(1);
+            }
+
+            auto include_path = next_operation->string_content;
+
+            // TODO: perhaps we should let the `extract_operations_from_file` handle this, just
+            // catch the exception
+            auto include_file = std::ifstream(include_path);
+            if (!include_file.is_open()) {
+              spdlog::error("Invalid include, file not found: {}", include_path);
+              exit(1);
+            }
+
+            auto include_operations
+                = pile::parser::extract_operations_from_file(include_path, true);
+
+            // Remove the include and the string
+            operation = new_operations.erase(operation);
+            operation = new_operations.erase(operation);
+
+            operation = new_operations.insert(operation, include_operations.begin(),
+                                              include_operations.end());
+            continue;
+          }
+          case Operation::UNKNOWN: {
+            spdlog::error("Unknown operation");
+            exit(1);
           }
           default: {
             break;
@@ -214,6 +296,38 @@ namespace pile {
 
         std::advance(operation, 1);
       }
+
+      // Print all macros
+      // for (auto& [name, macro] : macros) {
+      //   spdlog::info("Macro: {} @ {} ~> {}", name, std::get<0>(macro.range),
+      //                std::get<1>(macro.range));
+      //   for (auto& op : macro.operations) {
+      //     spdlog::info("  {}", op.get_operation_name());
+      //   }
+      // }
+
+      std::vector<int32_t> remove_indices = std::accumulate(
+          macros.begin(), macros.end(), std::vector<int32_t>{}, [](auto acc, auto macro) {
+            auto [begin, end] = macro.second.range;
+            for (auto i = begin; i <= end; ++i) {
+              acc.push_back(i);
+            }
+            return acc;
+          });
+
+      std::sort(remove_indices.begin(), remove_indices.end());
+
+      // Remove all the macros
+      if (remove_macros)
+        for (auto it = remove_indices.rbegin(); it != remove_indices.rend(); ++it)
+          new_operations.erase(new_operations.begin() + *it);
+
+      spdlog::debug("Operations ({})",
+                    std::accumulate(std::next(new_operations.begin()), new_operations.end(),
+                                    new_operations[0].get_operation_name(),
+                                    [](const std::string& a, const OperationData& b) {
+                                      return a + ", " + b.get_operation_name();
+                                    }));
 
       // FIXME: This is not working properly yet.
       if (!blocks_stack.empty()) {
@@ -230,7 +344,8 @@ namespace pile {
       return new_operations;
     }
 
-    std::vector<OperationData> extract_operations_from_file(const std::string& file) {
+    std::vector<OperationData> extract_operations_from_file(const std::string& file,
+                                                            bool including) {
       std::vector<OperationData> operations;
       std::ifstream fileReader(file);
 
@@ -252,7 +367,7 @@ namespace pile {
         }
       }
 
-      return parse_crossreference_blocks(operations);
+      return parse_crossreference_blocks(operations, !including);
     }
 
     std::vector<OperationData> extract_operations_from_multiline(const std::string& lines) {

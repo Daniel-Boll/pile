@@ -1,11 +1,6 @@
 [
 {
   "directory": "/home/danielboll/dev/Unioeste/2022/COMP/pile",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-fvisibility-inlines-hidden", "-O3", "-std=c++20", "-Iinclude", "-I", "/home/danielboll/.xmake/packages/c/cxxopts/v3.0.0/1eea793b9f4b4ec0827a4c67495d00a5/include", "-I", "/home/danielboll/.xmake/packages/s/spdlog/v1.10.0/1902f227aa5444989a19c0e0928690f2/include", "-DNDEBUG", "-o", "build/.objs/peak/linux/x86_64/release/standalone/main.cpp.o", "standalone/main.cpp"],
-  "file": "standalone/main.cpp"
-},
-{
-  "directory": "/home/danielboll/dev/Unioeste/2022/COMP/pile",
   "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-fvisibility-inlines-hidden", "-O3", "-std=c++20", "-Iinclude", "-I", "/home/danielboll/.xmake/packages/c/cxxopts/v3.0.0/1eea793b9f4b4ec0827a4c67495d00a5/include", "-I", "/home/danielboll/.xmake/packages/s/spdlog/v1.10.0/1902f227aa5444989a19c0e0928690f2/include", "-DNDEBUG", "-o", "build/.objs/pile/linux/x86_64/release/source/pile/compiler.cpp.o", "source/pile/compiler.cpp"],
   "file": "source/pile/compiler.cpp"
 },
@@ -23,4 +18,9 @@
   "directory": "/home/danielboll/dev/Unioeste/2022/COMP/pile",
   "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-fvisibility-inlines-hidden", "-O3", "-std=c++20", "-Iinclude", "-I", "/home/danielboll/.xmake/packages/c/cxxopts/v3.0.0/1eea793b9f4b4ec0827a4c67495d00a5/include", "-I", "/home/danielboll/.xmake/packages/s/spdlog/v1.10.0/1902f227aa5444989a19c0e0928690f2/include", "-DNDEBUG", "-o", "build/.objs/pile/linux/x86_64/release/source/pile/utils/utils.cpp.o", "source/pile/utils/utils.cpp"],
   "file": "source/pile/utils/utils.cpp"
+},
+{
+  "directory": "/home/danielboll/dev/Unioeste/2022/COMP/pile",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-fvisibility-inlines-hidden", "-O3", "-std=c++20", "-Iinclude", "-I", "/home/danielboll/.xmake/packages/c/cxxopts/v3.0.0/1eea793b9f4b4ec0827a4c67495d00a5/include", "-I", "/home/danielboll/.xmake/packages/s/spdlog/v1.10.0/1902f227aa5444989a19c0e0928690f2/include", "-DNDEBUG", "-o", "build/.objs/peak/linux/x86_64/release/standalone/main.cpp.o", "standalone/main.cpp"],
+  "file": "standalone/main.cpp"
 }]

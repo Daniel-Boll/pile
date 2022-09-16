@@ -121,10 +121,6 @@ namespace pile {
       // Try to extract operations from the line
       const auto operations = parser::extract_operations_from_line(line);
 
-      std::for_each(operations.begin(), operations.end(), [](OperationData operation) {
-        std::cout << "Operation: " << operation.get_operation_name() << std::endl;
-      });
-
       success = interpret(operations);
 
       // Time
@@ -137,12 +133,12 @@ namespace pile {
   }
 
   bool Repl::interpret(const std::vector<OperationData> &operations) {
-    assert_msg(OPERATIONS_COUNT == 33, "Update this function when adding new operations");
+    assert_msg(OPERATIONS_COUNT == 37, "Update this function when adding new operations");
     // spdlog::set_level(spdlog::level::debug);
 
     auto operation = operations.begin();
     while (operation != operations.end()) {
-      spdlog::debug("Interpreting operation: {}", operation->get_operation_name());
+      // spdlog::debug("Interpreting operation: {}", operation->get_operation_name());
       switch (operation->operation) {
         case Operation::PUSH_STRING: {
           auto result = pile::utils::unescape_string(operation->string_content);
@@ -419,6 +415,7 @@ namespace pile {
           stack.push(memory.get(address));
           break;
         }
+        case Operation::SYSCALL1_exclamation:
         case Operation::SYSCALL1: {
           spdlog::critical("Syscall1 not implemented");
           break;
@@ -530,6 +527,30 @@ namespace pile {
           const auto b = stack.pop();
 
           stack.push(b >> a);
+          break;
+        }
+        case Operation::MACRO: {
+          spdlog::critical(
+              "Unreachable code. If we reach this point it means that the parser is "
+              "broken");
+          break;
+        }
+        case Operation::IDENTIFIER: {
+          spdlog::critical(
+              "Unreachable code. If we reach this point it means that the parser is "
+              "broken");
+          break;
+        }
+        case Operation::INCLUDE: {
+          spdlog::critical(
+              "Unreachable code. If we reach this point it means that the parser is "
+              "broken");
+          break;
+        }
+        case Operation::UNKNOWN: {
+          spdlog::critical(
+              "Unreachable code. If we reach this point it means that the parser is "
+              "broken");
           break;
         }
         default: {

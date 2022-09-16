@@ -1,0 +1,12 @@
+\ Syscalls 
+macro SYS_write 1 end
+macro SYS_exit 60 end
+
+\ File descriptors
+macro stdin 0     end
+macro stdout 1    end
+macro stderr 2    end
+
+macro write 
+  swap stdout SYS_write syscall3! 
+end
