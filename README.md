@@ -15,5 +15,7 @@
   - [ ] Lexical Analysis
   - [ ] Semantic Analysis
   - [ ] Syntactic Analysis
+- [ ] CI/CD test automation
+- [ ] Benchmark comparison
 
 ## Troubleshooting
