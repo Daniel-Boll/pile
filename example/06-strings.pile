@@ -1,9 +1,3 @@
-SYS_write stdout "Hello, world\n" syscall3
-
-macro write 
-  \ size address stdout SYS_write
-  swap
-  stdout SYS_write syscall3!
-end
+include "std/io.pile"
 
 "Hello, world\n" write

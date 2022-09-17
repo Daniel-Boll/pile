@@ -24,6 +24,8 @@ enum class Operation {
   // Kernel
   SYSCALL1,
   SYSCALL3,
+  SYSCALL1_exclamation,
+  SYSCALL3_exclamation,
 
   // Operations
   PLUS,
@@ -52,12 +54,22 @@ enum class Operation {
   DO,
 
   // Block control
-  END
-};
-#define OPERATIONS_COUNT 32  // Last operation `push_string`
+  END,
 
-enum class TokenType { BUILTIN_WORD, INT, STRING_LITERAL };
-#define TOKEN_TYPES_COUNT 3  // Last token type `STRING_LITERAL`
+  // Preprocessor
+  MACRO,
+
+  // Identifier
+  IDENTIFIER,
+  INCLUDE,
+
+  // Unknown
+  UNKNOWN,
+};
+#define OPERATIONS_COUNT 38  // Last operation `syscall1_exclamation`
+
+enum class TokenType { WORD, INT, STRING_LITERAL, CHARACTER_LITERAL };
+#define TOKEN_TYPES_COUNT 4  // Last token type `CHARACTER_LITERAL`
 
 struct TokenData {
   TokenType type;
@@ -68,10 +80,14 @@ struct OperationData {
   Operation operation;
   int32_t instruction_counter;
 
-  // NOTE: perhaps should be a union
   int32_t value;
-  std::string string;
+  std::string string_content;
+  std::string name;
   int32_t closing_block;
+
+  ~OperationData() {
+    if (operation == Operation::PUSH_STRING) string_content.~basic_string();
+  }
 
   std::string get_operation_name() const {
     switch (operation) {
@@ -101,6 +117,10 @@ struct OperationData {
         return "SYSCALL1";
       case Operation::SYSCALL3:
         return "SYSCALL3";
+      case Operation::SYSCALL1_exclamation:
+        return "SYSCALL1_exclamation";
+      case Operation::SYSCALL3_exclamation:
+        return "SYSCALL3_exclamation";
       case Operation::PLUS:
         return "PLUS";
       case Operation::MINUS:
@@ -139,19 +159,33 @@ struct OperationData {
         return "DO";
       case Operation::END:
         return "END";
+      case Operation::MACRO:
+        return "MACRO";
+      case Operation::IDENTIFIER:
+        return "IDENTIFIER";
+      case Operation::INCLUDE:
+        return "INCLUDE";
+      case Operation::UNKNOWN:
+        return "UNKNOWN";
       default:
         return "UNKNOWN";
     }
   }
 };
 
+struct Macro {
+  std::vector<OperationData> operations;
+  std::tuple<int32_t, int32_t> range;
+};
+
 namespace pile {
   namespace parser {
     OperationData parse_word_as_op(const TokenData& token);
     TokenData parse_token(const std::string& word);
-    std::vector<OperationData> parse_crossreference_blocks(std::vector<OperationData> operations);
+    std::vector<OperationData> parse_crossreference_blocks(std::vector<OperationData> operations,
+                                                           bool remove_macros = true);
 
-    std::vector<OperationData> extract_operations_from_file(const std::string& file);
+    std::vector<OperationData> extract_operations_from_file(const std::string& file, bool including = false);
     std::vector<OperationData> extract_operations_from_multiline(const std::string& lines);
     std::vector<OperationData> extract_operations_from_line(const std::string& line);
 
@@ -159,7 +193,7 @@ namespace pile {
       return OperationData{.operation = Operation::PUSH_INT, .value = value};
     }
     inline OperationData push_string(const std::string& value) {
-      return OperationData{.operation = Operation::PUSH_STRING, .string = value};
+      return OperationData{.operation = Operation::PUSH_STRING, .string_content = value};
     }
     inline OperationData plus() { return OperationData{.operation = Operation::PLUS}; }
     inline OperationData minus() { return OperationData{.operation = Operation::MINUS}; }
@@ -174,11 +208,24 @@ namespace pile {
     inline OperationData load() { return OperationData{.operation = Operation::LOAD}; }
     inline OperationData syscall1() { return OperationData{.operation = Operation::SYSCALL1}; }
     inline OperationData syscall3() { return OperationData{.operation = Operation::SYSCALL3}; }
+    inline OperationData syscall1_exclamation() {
+      return OperationData{.operation = Operation::SYSCALL1_exclamation};
+    }
+    inline OperationData syscall3_exclamation() {
+      return OperationData{.operation = Operation::SYSCALL3_exclamation};
+    }
     inline OperationData mod() { return OperationData{.operation = Operation::MOD}; }
     inline OperationData equals() { return OperationData{.operation = Operation::EQUAL}; }
     inline OperationData if_op() { return OperationData{.operation = Operation::IF}; }
     inline OperationData else_op() { return OperationData{.operation = Operation::ELSE}; }
     inline OperationData end() { return OperationData{.operation = Operation::END}; }
+    inline OperationData macro() { return OperationData{.operation = Operation::MACRO}; }
+    inline OperationData identifier(const std::string& name) {
+      return OperationData{.operation = Operation::IDENTIFIER, .name = name};
+    }
+    inline OperationData include() { return OperationData{.operation = Operation::INCLUDE}; }
+    inline OperationData Unknown() { return OperationData{.operation = Operation::UNKNOWN}; }
+
     inline OperationData greater_than() {
       return OperationData{.operation = Operation::GREATER_THAN};
     }
@@ -197,6 +244,5 @@ namespace pile {
     inline OperationData shift_right() { return OperationData{.operation = Operation::SHR}; }
     inline OperationData while_op() { return OperationData{.operation = Operation::WHILE}; }
     inline OperationData do_op() { return OperationData{.operation = Operation::DO}; }
-
   }  // namespace parser
 }  // namespace pile

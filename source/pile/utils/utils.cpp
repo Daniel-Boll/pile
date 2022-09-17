@@ -15,6 +15,7 @@ namespace pile::utils {
 
   // starts and ends with "
   bool is_string(const std::string &str) { return str[0] == '"' && str[str.size() - 1] == '"'; }
+  bool is_char(const std::string &str) { return str[0] == '\'' && str[str.size() - 1] == '\''; }
 
   std::vector<std::string> split(const std::string &str, char delimiter) {
     std::vector<std::string> tokens;
