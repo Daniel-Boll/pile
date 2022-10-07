@@ -47,8 +47,9 @@ namespace pile {
 
       if (utils::is_digit(word)) return TokenData{TokenType::INT, word};
       if (utils::is_char(word)) return TokenData{TokenType::CHARACTER_LITERAL, word};
-      if (utils::is_string(word))
+      if (utils::is_string(word)) {
         return TokenData{TokenType::STRING_LITERAL, word.substr(1, word.size() - 2)};
+      }
 
       return TokenData{TokenType::WORD, word};
     }

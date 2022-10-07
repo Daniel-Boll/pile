@@ -1,4 +1,5 @@
 \ Syscalls 
+macro SYS_read 0 end
 macro SYS_write 1 end
 macro SYS_exit 60 end
 
@@ -7,6 +8,16 @@ macro stdin 0     end
 macro stdout 1    end
 macro stderr 2    end
 
+\ Boolean
+macro true 1      end
+macro false 0     end
+
+\ *buf size
 macro write 
   swap stdout SYS_write syscall3! 
+end
+
+\ *buf size
+macro read
+  swap stdin SYS_read syscall3!
 end

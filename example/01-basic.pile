@@ -2,3 +2,16 @@
 34 35 + dump
 421 2 - dump
 1 -1 - .
+
+0x03212.ptr
+
+1.i32
+2.i32 
++ .
+
+1 cast(i32)
+2 cast(i32)
++ .
+
+1.bool
+1 cast(bool) .

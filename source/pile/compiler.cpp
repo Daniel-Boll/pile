@@ -1,8 +1,7 @@
 #include <pile/compiler.hpp>
 #include <pile/repl.hpp>
+#include <pile/utils/stack.hpp>
 #include <pile/utils/utils.hpp>
-
-#include "pile/utils/stack.hpp"
 
 inline static std::string asm_plus() {
   return R"(
@@ -43,7 +42,7 @@ namespace pile {
           out << fmt::format("       push string_{}\n", strings.size());
           out << "       mov rax, " << op.string_content.length() << "\n";
           out << "       push rax\n";
-
+            
           strings.emplace_back(pile::utils::unescape_string(op.string_content));
           break;
         }
