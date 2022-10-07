@@ -2,7 +2,7 @@ set_languages("c++20")
 add_rules("mode.debug", "mode.release")
 -- set_optimize("fastest")
 
-local libs = { "cxxopts", "spdlog" }
+local libs = { "cxxopts", "spdlog", "nlohmann_json" }
 add_requires(table.unpack(libs))
 add_includedirs("include")
 

@@ -1,3 +1,0 @@
-include "std/io.pile"
-
-"Your name:\n" write

@@ -1,7 +1,0 @@
-include "std/io.pile"
-
-100 10 > if 
-  "caso verdade\n" write
-else
-  "caso falso\n" write
-end

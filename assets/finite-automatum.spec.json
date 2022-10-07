@@ -1,0 +1,312 @@
+{
+  "keywords": ["if", "while", "do", "memory", "else", "end", "dup", "dump", "macro"],
+  "categories": {
+    "control_flow": ["if", "while", "do", "else", "end"],
+    "memory": ["memory"],
+    "stack": ["dup", "dump"],
+    "preprocessor": ["macro"]
+  },
+  "regex_alias": {
+    "digit": "[0-9]",
+    "digit_except_zero": "[1-9]",
+    "hex_digit": "[0-9a-fA-F]",
+    "space_and_tabs": "[\\s\\t]",
+    "string_content": "([^\"\\\n]|\\.)",
+    "identifier_start": "[a-zA-Z_]",
+    "identifier_body": "[a-zA-Z0-9_?!]",
+    "arithmetic_symbols": "[+*%]"
+  },
+  "nodes": {
+    "0": {
+      "type": "normal",
+      "transitions": {
+        "0": "1",
+        "{digit_except_zero}": "2",
+        "\"": "21",
+        "\\\\": "23",
+        "{identifier_start}": "25",
+        "{space_and_tabs}": "27",
+        "@": "28",
+        "{arithmetic_symbols}": "31",
+        "(>|!|<)": "32",
+        "=": "33",
+        "-": "47",
+        "{outro}": "35"
+      }
+    },
+    "1": {
+      "type": "normal",
+      "transitions": {
+        "x": "3",
+        "{digit}": "2",
+        "\\.": "5",
+        "{outro}": "4"
+      }
+    },
+    "2": {
+      "type": "normal",
+      "transitions": {
+        "{digit}": "2",
+        "\\.": "5",
+        "{outro}": "4"
+      }
+    },
+    "3": {
+      "type": "normal",
+      "transitions": {
+        "{hex_digit}": "44",
+        "{outro}": "45"
+      }
+    },
+    "4": {
+      "type": "computer",
+      "computes": "i32",
+      "exception": "backtrack"
+    },
+    "5": {
+      "type": "normal",
+      "transitions": {
+        "{digit}": "6",
+        "f": "8",
+        "b": "13",
+        "i": "17",
+        "{outro}": "38"
+      }
+    },
+    "6": {
+      "type": "normal",
+      "transitions": {
+        "{digit}": "6",
+        "\\.": "46",
+        "{outro}": "7"
+      }
+    },
+    "7": {
+      "type": "computer",
+      "computes": "f32",
+      "exception": "backtrack"
+    },
+    "8": {
+      "type": "normal",
+      "transitions": {
+        "3": "9",
+        "6": "11",
+        "{outro}": "41"
+      }
+    },
+    "9": {
+      "type": "normal",
+      "transitions": {
+        "2": "10",
+        "{outro}": "42"
+      }
+    },
+    "10": {
+      "type": "computer",
+      "computes": "f32",
+      "exception": "remove_cast"
+    },
+    "11": {
+      "type": "normal",
+      "transitions": {
+        "4": "12",
+        "{outro}": "43"
+      }
+    },
+    "12": {
+      "type": "computer",
+      "computes": "f64",
+      "exception": "remove_cast"
+    },
+    "13": {
+      "type": "normal",
+      "transitions": {
+        "o": "14",
+        "{outro}": "40"
+      }
+    },
+    "14": {
+      "type": "normal",
+      "transitions": {
+        "o": "15",
+        "{outro}": "40"
+      }
+    },
+    "15": {
+      "type": "normal",
+      "transitions": {
+        "l": "16",
+        "{outro}": "40"
+      }
+    },
+    "16": {
+      "type": "computer",
+      "computes": "bool",
+      "exception": "remove_cast"
+    },
+    "17": {
+      "type": "normal",
+      "transitions": {
+        "3": "18",
+        "{outro}": "39"
+      }
+    },
+    "18": {
+      "type": "normal",
+      "transitions": {
+        "2": "19",
+        "{outro}": "39"
+      }
+    },
+    "19": {
+      "type": "computer",
+      "computes": "i32",
+      "exception": "remove_cast"
+    },
+    "20": {
+      "type": "computer",
+      "computes": "i32",
+      "exception": "compute_hex"
+    },
+    "21": {
+      "type": "normal",
+      "transitions": {
+        "{string_content}": "21",
+        "[\\\n]": "36",
+        "\"": "22"
+      }
+    },
+    "22": {
+      "type": "computer",
+      "computes": "string"
+    },
+    "23": {
+      "type": "normal",
+      "transitions": {
+        "([^\n]|.)": "23",
+        "\n": "24"
+      }
+    },
+    "24": {
+      "type": "computer",
+      "computes": "comment",
+      "exception": "backtrack"
+    },
+    "25": {
+      "type": "normal",
+      "transitions": {
+        "{identifier_body}": "25",
+        "{outro}": "26"
+      }
+    },
+    "26": {
+      "type": "computer",
+      "computes": "identifier",
+      "exception": "identify_token_property"
+    },
+    "27": {
+      "type": "computer",
+      "computes": "space or tab"
+    },
+    "28": {
+      "type": "normal",
+      "transitions": {
+        "{identifier_start}": "29",
+        "{outro}": "37"
+      }
+    },
+    "29": {
+      "type": "normal",
+      "transitions": {
+        "{identifier_body}": "29",
+        "{outro}": "30"
+      }
+    },
+    "30": {
+      "type": "computer",
+      "computes": "assign_id",
+      "exception": "backtrack"
+    },
+    "31": {
+      "type": "computer",
+      "computes": "arithmetic_operator"
+    },
+    "32": {
+      "type": "normal",
+      "transitions": {
+        "=": "33",
+        "{outro}": "34"
+      }
+    },
+    "33": {
+      "type": "computer",
+      "computes": "comparison_operator"
+    },
+    "34": {
+      "type": "computer",
+      "computes": "comparison_operator",
+      "exception": "backtrack"
+    },
+    "35": {
+      "type": "error",
+      "error": "Invalid character"
+    },
+    "36": {
+      "type": "error",
+      "error": "Invalid string"
+    },
+    "37": {
+      "type": "error",
+      "error": "Invalid identifier"
+    },
+    "38": {
+      "type": "error",
+      "error": "Invalid float or cast"
+    },
+    "39": {
+      "type": "error",
+      "error": "Invalid cast, expected i32"
+    },
+    "40": {
+      "type": "error",
+      "error": "Invalid cast, expected bool"
+    },
+    "41": {
+      "type": "error",
+      "error": "Invalid cast, expected f32 or f64"
+    },
+    "42": {
+      "type": "error",
+      "error": "Invalid cast, expected f32"
+    },
+    "43": {
+      "type": "error",
+      "error": "Invalid cast, expected f62"
+    },
+    "44": {
+      "type": "normal",
+      "transitions": {
+        "{hex_digit}": "44",
+        "{outro}": "20"
+      }
+    },
+    "45": {
+      "type": "error",
+      "error": "Invalid hex"
+    },
+    "46": {
+      "type": "normal",
+      "transitions": {
+        "f": "8",
+        "{outro}": "41"
+      }
+    },
+    "47": {
+      "type": "normal",
+      "transitions": {
+        "{digit}": "2",
+        "{outro}": "31"
+      }
+    }
+  }
+}

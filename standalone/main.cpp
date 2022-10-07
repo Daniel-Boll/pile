@@ -1,6 +1,6 @@
-#include <pile/compiler.hpp>
-#include <pile/repl.hpp>
 #include <pile/utils/common.hpp>
+
+#include "pile/lexer/lexer.hpp"
 
 int main(int argc, char **argv) {
   spdlog::set_pattern("[%H:%M:%S] [%^%l%$] %v");
@@ -21,9 +21,8 @@ int main(int argc, char **argv) {
   auto result = options.parse(argc, argv);
 
   if (argc == 1) {
-    pile::Repl repl;
-    repl.run();
-    exit(0);
+    spdlog::error("The REPL is not yet implemented");
+    exit(1);
   }
 
   if (result.count("help")) {
@@ -37,8 +36,7 @@ int main(int argc, char **argv) {
   }
 
   if (result.count("REPL")) {
-    pile::Repl repl;
-    repl.run();
+    spdlog::error("The REPL is not yet implemented");
   }
 
   if (result.count("debug")) {
@@ -54,11 +52,14 @@ int main(int argc, char **argv) {
     const auto output = result.count("output") ? result["output"].as<std::string>() : "a";
     const auto file = result["file"].as<std::string>();
     {  // Compilation process
-      const auto operations = pile::parser::extract_operations_from_file(file);
-
-      pile::compile(operations, output);
-
-      spdlog::info("Compiled {} to {}", file, output + ".out");
+      std::vector<std::string> include_dir{"."};
+      try {
+        pile::Lexer::analyze(file, &include_dir);
+      } catch (const std::exception &e) {
+        spdlog::error("Lexical analysis failed");
+        spdlog::debug("{}", e.what());
+        exit(1);
+      }
     }
   }
 

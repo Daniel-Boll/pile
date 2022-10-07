@@ -1,3 +1,0 @@
-\ macro write swap stdout SYS_write syscall3! end
-
-"Hello, world\n" swap stdout SYS_write syscall3!

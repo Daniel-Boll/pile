@@ -1,3 +1,0 @@
-include "std/io.pile"
-
-"Hello, world\n" write
