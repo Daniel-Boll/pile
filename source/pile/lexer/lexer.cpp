@@ -44,7 +44,7 @@ namespace pile::Lexer {
         macros.insert(included_macros.begin(), included_macros.end());
 
         // Add the included tokens to the final tokens
-        std::copy(included_tokens.begin(), included_tokens.end(), std::back_inserter(final_tokens));
+        std::ranges::copy(included_tokens, std::back_inserter(final_tokens));
 
         line_number++;
         continue;
@@ -54,11 +54,10 @@ namespace pile::Lexer {
       auto tokens = automatum.compute(fmt::format("{}\n", line), filename, line_number);
 
       // Get all the tokens that are not from the type "space or tab" or "comment"
-      std::copy_if(tokens.begin(), tokens.end(), std::back_inserter(final_tokens),
-                   [](const Lexer::Token &token) {
-                     // TODO: capture this from flags like: "--keep-comments"
-                     return token.type != "space or tab" && token.type != "comment";
-                   });
+      std::ranges::copy_if(tokens, std::back_inserter(final_tokens), [](auto token) {
+        // TODO: capture this from flags like: "--keep-comments"
+        return token.type != "space or tab" && token.type != "comment";
+      });
 
       line_number++;
     }

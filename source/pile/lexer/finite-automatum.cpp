@@ -45,9 +45,8 @@ namespace pile::Lexer {
 
     auto character = input.begin();
     while (character != input.end()) {
-      auto current_node = std::find_if(
-          nodes.begin(), nodes.end(),
-          [current_node_id](const Node &node) { return node.id == current_node_id; });
+      auto current_node = std::ranges::find_if(
+          nodes, [current_node_id](auto node) { return node.id == current_node_id; });
 
       switch (current_node->type) {
         case NodeType::Normal: {
@@ -121,9 +120,8 @@ namespace pile::Lexer {
       // If I'm the last character
       if (std::next(character) == input.end()) {
         // If the next Node is a computer
-        auto next_node = std::find_if(
-            nodes.begin(), nodes.end(),
-            [current_node_id](const Node &node) { return node.id == current_node_id; });
+        auto next_node = std::ranges::find_if(
+            nodes, [current_node_id](auto node) { return node.id == current_node_id; });
         if (next_node->type == NodeType::Computer) {
           std::string token_type = next_node->computes;
           if (next_node->exception == "backtrack") {

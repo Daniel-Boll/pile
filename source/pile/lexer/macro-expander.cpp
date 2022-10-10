@@ -65,8 +65,20 @@ namespace pile::Lexer::MacroExpander {
     while (token != expanded_tokens.end()) {
       if (token->type == "identifier") {
         auto macro = macros[token->lexeme];
+        // Keep both the filename and position of the expanded identifier
+        auto filename = token->file;
+        auto position = token->position;
+
         if (!macro.empty()) {
           token = expanded_tokens.erase(token);
+
+          // Iterate over the macro and change it's elements filename and position
+          std::ranges::transform(macro, macro.begin(), [filename, position](auto &token) {
+            token.file = filename;
+            token.position = position;
+            return token;
+          });
+
           token = expanded_tokens.insert(token, macro.begin(), macro.end());
         }
 
@@ -74,6 +86,15 @@ namespace pile::Lexer::MacroExpander {
           auto included_macro = included_macros->find(token->lexeme);
           if (included_macro != included_macros->end()) {
             token = expanded_tokens.erase(token);
+
+            // Iterate over the macro and change it's elements filename and position
+            std::ranges::transform(included_macro->second, included_macro->second.begin(),
+                                   [filename, position](auto &token) {
+                                     token.file = filename;
+                                     token.position = position;
+                                     return token;
+                                   });
+
             token = expanded_tokens.insert(token, included_macro->second.begin(),
                                            included_macro->second.end());
           }
