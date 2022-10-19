@@ -63,14 +63,15 @@ namespace pile::Lexer {
     }
 
     // Macro expansion
-    auto [expanded_tokens, _] = MacroExpander::expand(final_tokens, &macros);
-    for (auto &token : expanded_tokens) {
-      std::string print_category
-          = (token.category != "none") ? fmt::format("<{}>", token.category) : "";
+    auto result = MacroExpander::expand(final_tokens, &macros);
+    for (auto &token : result.tokens) {
+      std::string print_category = (token.category != "none" && !token.category.empty())
+                                       ? fmt::format("<{}>", token.category)
+                                       : "";
       fmt::print("({}, {}{}, {}, <{}:{}>)\n", token.file, token.type, print_category, token.lexeme,
                  token.position.first, token.position.second);
     }
 
-    return Nameless();
+    return result;
   }
 }  // namespace pile::Lexer

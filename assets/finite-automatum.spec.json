@@ -1,5 +1,5 @@
 {
-  "keywords": ["if", "while", "do", "memory", "else", "end", "dup", "dump", "macro"],
+  "keywords": ["if", "while", "do", "memory", "else", "end", "dup", "dump", "macro", "def(i32)"],
   "categories": {
     "control_flow": ["if", "while", "do", "else", "end"],
     "memory": ["memory"],
@@ -13,7 +13,7 @@
     "space_and_tabs": "[\\s\\t]",
     "string_content": "([^\"\\\n]|\\.)",
     "identifier_start": "[a-zA-Z_]",
-    "identifier_body": "[a-zA-Z0-9_?!]",
+    "identifier_body": "[a-zA-Z0-9_?!()]",
     "arithmetic_symbols": "[+*%]"
   },
   "nodes": {
@@ -31,6 +31,7 @@
         "(>|!|<)": "32",
         "=": "33",
         "-": "47",
+        ":": "52",
         "{outro}": "35"
       }
     },
@@ -40,6 +41,7 @@
         "x": "3",
         "{digit}": "2",
         "\\.": "5",
+        ":": "48",
         "{outro}": "4"
       }
     },
@@ -48,6 +50,7 @@
       "transitions": {
         "{digit}": "2",
         "\\.": "5",
+        ":": "48",
         "{outro}": "4"
       }
     },
@@ -67,9 +70,6 @@
       "type": "normal",
       "transitions": {
         "{digit}": "6",
-        "f": "8",
-        "b": "13",
-        "i": "17",
         "{outro}": "38"
       }
     },
@@ -77,7 +77,7 @@
       "type": "normal",
       "transitions": {
         "{digit}": "6",
-        "\\.": "46",
+        ":": "46",
         "{outro}": "7"
       }
     },
@@ -225,7 +225,7 @@
     "30": {
       "type": "computer",
       "computes": "assign_id",
-      "exception": "backtrack"
+      "exception": "remove_assign_identifier"
     },
     "31": {
       "type": "computer",
@@ -261,7 +261,7 @@
     },
     "38": {
       "type": "error",
-      "error": "Invalid float or cast"
+      "error": "Invalid float"
     },
     "39": {
       "type": "error",
@@ -297,8 +297,8 @@
     "46": {
       "type": "normal",
       "transitions": {
-        "f": "8",
-        "{outro}": "41"
+        ":": "51",
+        "{outro}": "50"
       }
     },
     "47": {
@@ -307,6 +307,122 @@
         "{digit}": "2",
         "{outro}": "31"
       }
+    },
+    "48": {
+      "type": "normal",
+      "transitions": {
+        ":": "49",
+        "{outro}": "50"
+      }
+    },
+    "49": {
+      "type": "normal",
+      "transitions": {
+        "f": "8",
+        "b": "13",
+        "i": "17",
+        "{outro}": "50"
+      }
+    },
+    "50": {
+      "type": "error",
+      "error": "Invalid cast syntax"
+    },
+    "51": {
+      "type": "normal",
+      "transitions": {
+        "f": "8",
+        "{outro}": "41"
+      }
+    },
+    "52": {
+      "type": "normal",
+      "transitions": {
+        ":": "53",
+        "{outro}": "50"
+      }
+    },
+    "53": {
+      "type": "normal",
+      "transitions": {
+        "f": "54",
+        "i": "59",
+        "b": "62",
+        "{outro}": "50"
+      }
+    },
+    "54": {
+      "type": "normal",
+      "transitions": {
+        "3": "55",
+        "6": "57",
+        "{outro}": "41"
+      }
+    },
+    "55": {
+      "type": "normal",
+      "transitions": {
+        "2": "56",
+        "{outro}": "42"
+      }
+    },
+    "56": {
+      "type": "computer",
+      "computes": "cast(f32)"
+    },
+    "57": {
+      "type": "normal",
+      "transitions": {
+        "4": "58",
+        "{outro}": "43"
+      }
+    },
+    "58": {
+      "type": "computer",
+      "computes": "cast(f64)"
+    },
+    "59": {
+      "type": "normal",
+      "transitions": {
+        "3": "60",
+        "{outro}": "41"
+      }
+    },
+    "60": {
+      "type": "normal",
+      "transitions": {
+        "2": "61",
+        "{outro}": "39"
+      }
+    },
+    "61": {
+      "type": "computer",
+      "computes": "cast(i32)"
+    },
+    "62": {
+      "type": "normal",
+      "transitions": {
+        "o": "63",
+        "{outro}": "39"
+      }
+    },
+    "63": {
+      "type": "normal",
+      "transitions": {
+        "o": "64",
+        "{outro}": "39"
+      }
+    },
+    "64": {
+      "type": "normal",
+      "transitions": {
+        "l": "65",
+        "{outro}": "39"
+      }
+    },
+    "65": {
+      "type": "computer",
+      "computes": "cast(bool)"
     }
   }
 }

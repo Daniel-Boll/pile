@@ -1,0 +1,8 @@
+def(i32) index
+0 @index 
+
+while index 10 >= do
+    index dup dump \ duplicate the value because dump consumes it and we'll need another one to the increment below
+    1 + @index
+end
+\ no drop needed

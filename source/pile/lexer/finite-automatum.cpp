@@ -81,11 +81,17 @@ namespace pile::Lexer {
               }
             }
           } else if (current_node->exception == "remove_cast") {
-            // Remove everything after the last . and the .
-            current_lexeme = current_lexeme.substr(0, current_lexeme.find_last_of('.'));
+            // Remove everything after the ::
+            current_lexeme = current_lexeme.substr(0, current_lexeme.find("::"));
           } else if (current_node->exception == "compute_hex") {
             std::advance(character, -1);
             current_lexeme = std::to_string(std::stoi(current_lexeme, nullptr, 16));
+          } else if (current_node->exception == "remove_assign_identifier") {
+            std::advance(character, -1);
+            current_lexeme.pop_back();
+
+            // Remove the first character as well
+            current_lexeme.erase(0, 1);
           }
 
           result.type = token_type;
@@ -101,13 +107,8 @@ namespace pile::Lexer {
           break;
         }
         case NodeType::Error: {
-          // Red and bold print
           spdlog::error("{}: {}:{} {} got {}\n", "ERROR", current_position.first,
                         current_position.second, current_node->error, current_lexeme);
-          // fmt::print("{}: {}:{} {} got {}\n",
-          //            fmt::styled("ERROR", fmt::emphasis::bold | fmt::fg(fmt::color::red)),
-          //            current_position.first, current_position.second, current_node->error,
-          //            current_lexeme);
 
           current_node_id = NODE_ID_START;
           current_position.second += current_lexeme.size();
@@ -140,10 +141,13 @@ namespace pile::Lexer {
             }
           } else if (next_node->exception == "remove_cast") {
             // Remove everything after the last . and the .
-            current_lexeme = current_lexeme.substr(0, current_lexeme.find_last_of('.'));
+            current_lexeme = current_lexeme.substr(0, current_lexeme.find("::"));
           } else if (next_node->exception == "compute_hex") {
             current_lexeme.pop_back();
             current_lexeme = std::to_string(std::stoi(current_lexeme, nullptr, 16));
+          } else if (next_node->exception == "remove_assign_identifier") {
+            current_lexeme.pop_back();
+            current_lexeme.erase(0, 1);
           }
 
           result.type = token_type;
