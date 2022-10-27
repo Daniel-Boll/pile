@@ -1,0 +1,6 @@
+10 range idx do
+  idx dump
+end
+
+\ Optionally without an identifier
+10 range do 1 dump end \ will print 1 10 times

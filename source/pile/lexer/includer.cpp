@@ -55,7 +55,10 @@ namespace pile::Lexer::Includer {
       }
     }
 
-    throw std::runtime_error(fmt::format("File {} not found", filename));
+    throw std::runtime_error(
+        fmt::format("File {} not found. Check if the the name of the file is correct an ensure "
+                    "that there's nothing more in the line",
+                    filename));
   }
 
 }  // namespace pile::Lexer::Includer

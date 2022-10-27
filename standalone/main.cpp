@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
         pile::Lexer::analyze(file, &include_dir);
       } catch (const std::exception &e) {
         spdlog::error("Lexical analysis failed");
-        spdlog::debug("{}", e.what());
+        spdlog::error("{}", e.what());
         exit(1);
       }
     }

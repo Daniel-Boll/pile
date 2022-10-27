@@ -1,0 +1,7 @@
+macro SYS_write 1 end
+
+macro write
+ swap stdout SYS_write syscall3!
+end
+
+write

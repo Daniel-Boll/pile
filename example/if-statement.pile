@@ -1,0 +1,13 @@
+include "std/io.pile"
+
+100 10 > if
+  "true case" write \ true case
+else
+  "false case" write
+end
+
+1 2 = if
+  "true case" write
+else
+  "false case" write \ false case
+end

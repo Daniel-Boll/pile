@@ -40,3 +40,51 @@
 - [ ] Benchmark comparison
 
 ## Troubleshooting
+
+\begin{bnfgrammar}
+<program> ::= <statement>
+;;
+;;
+<statement> ::= <if-statement>
+ | <while-statement>
+ | <range-statement>
+ | <numeric-literal>
+ | \textbf{string\_literal}
+ | \textbf{id}
+ | <assign-to-identifier>
+ | <cast>
+ | <variable\_declaration>
+ | \textbf{arithmetic\_op}
+ | <statement> <statement>
+;;
+;;
+<cast> ::= \textbf{\char"003A\char"003A} <type>
+;;
+<type> ::= \textbf{i32} || \textbf{f32} || \textbf{f64} || \textbf{bool}
+;;
+<variable\_declaration> ::= <type> \textbf{id}
+;;
+<assign-to-identifier> ::= \textbf{@} \textbf{id}
+;;
+<numeric-literal> ::= \textbf{integer\_literal} || \textbf{float\_literal} || \textbf{bool}
+;;
+;;
+<stack-ops> ::= \textbf{swap} || \textbf{dup} || \textbf{drop} || \textbf{over} || \textbf{dup2} || \textbf{dump}
+;;
+<pop-stack> ::= (<integer-literal> || <stack-ops>)
+;;
+;;
+<if-statement> ::= <if-body> || <if-else-body>
+;;
+<if-body> ::= \textbf{if} <statement> \textbf{end}
+;;
+<if-else-body> ::= \textbf{if} <statement> \textbf{else} <statement> \textbf{end}
+;;
+;;
+<while-logic> ::= \textbf{comparison_op} || <numeric-literal> || <stack-ops>
+;;
+<while-statement> ::= \textbf{while} <while-logic>+ \textbf{do} <statement> \textbf{end}
+;;
+<range-statement> ::= \textbf{range} <id>? \textbf{do} <statement> \textbf{end}
+;;
+\end{bnfgrammar}

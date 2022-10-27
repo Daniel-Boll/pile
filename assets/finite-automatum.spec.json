@@ -1,5 +1,5 @@
 {
-  "keywords": ["if", "while", "do", "memory", "else", "end", "dup", "dump", "macro", "def(i32)"],
+  "keywords": ["if", "while", "do", "memory", "else", "end", "dup", "dump", "macro", "def(i32)", "range"],
   "categories": {
     "control_flow": ["if", "while", "do", "else", "end"],
     "memory": ["memory"],
@@ -17,12 +17,12 @@
     "arithmetic_symbols": "[+*%]"
   },
   "nodes": {
-    "0": {
+    "initial": {
       "type": "normal",
       "transitions": {
         "0": "1",
         "{digit_except_zero}": "2",
-        "\"": "21",
+        "\"": "str-1",
         "\\\\": "23",
         "{identifier_start}": "25",
         "{space_and_tabs}": "27",
@@ -168,15 +168,15 @@
       "computes": "i32",
       "exception": "compute_hex"
     },
-    "21": {
+    "str-1": {
       "type": "normal",
       "transitions": {
-        "{string_content}": "21",
-        "[\\\n]": "36",
-        "\"": "22"
+        "{string_content}": "str-1",
+        "[\\\n]": "error-invalid-string",
+        "\"": "string-literal"
       }
     },
-    "22": {
+    "string-literal": {
       "type": "computer",
       "computes": "string"
     },
@@ -251,7 +251,7 @@
       "type": "error",
       "error": "Invalid character"
     },
-    "36": {
+    "error-invalid-string": {
       "type": "error",
       "error": "Invalid string"
     },

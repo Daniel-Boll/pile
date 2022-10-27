@@ -16,7 +16,7 @@ namespace pile {
 
       struct Node {
       public:
-        uint_fast8_t id;
+        std::string id;
         NodeType type;
 
         /* ----------------- */

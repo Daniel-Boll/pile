@@ -6,13 +6,11 @@
 
 using json = nlohmann::json;
 
-#define NODE_ID_START 0
-
 namespace pile::Lexer {
   FiniteAutomatum::FiniteAutomatum(const json &data) {
     for (auto [idx, node_value] : data["nodes"].items()) {
       Node current_node;
-      current_node.id = std::stoi(idx);
+      current_node.id = idx;
       current_node.type = Node::node_type_from_string(node_value["type"]);
 
       if (current_node.type == NodeType::Normal)
@@ -38,7 +36,7 @@ namespace pile::Lexer {
                                                      const std::string &file, const int32_t &line) {
     std::vector<Lexer::Token> tokens;
 
-    uint_fast8_t current_node_id = NODE_ID_START;
+    std::string current_node_id = "initial";
     std::string type = "none";
     std::string current_lexeme = "";
     std::pair<int, int> current_position = {line, 1};
@@ -53,7 +51,7 @@ namespace pile::Lexer {
           for (auto [regex, next] : current_node->transitions) {
             std::string match = std::string(1, *character);
             if (std::regex_match(match, std::regex(regex))) {
-              current_node_id = std::stoi(next);
+              current_node_id = next;
               current_lexeme += *character;
               break;
             }
@@ -100,7 +98,7 @@ namespace pile::Lexer {
           result.file = file;
           tokens.push_back(result);
 
-          current_node_id = NODE_ID_START;
+          current_node_id = "initial";
           current_position.second += current_lexeme.size();
           current_lexeme = "";
           std::advance(character, -1);
@@ -110,7 +108,7 @@ namespace pile::Lexer {
           spdlog::error("{}: {}:{} {} got {}\n", "ERROR", current_position.first,
                         current_position.second, current_node->error, current_lexeme);
 
-          current_node_id = NODE_ID_START;
+          current_node_id = "initial";
           current_position.second += current_lexeme.size();
           current_lexeme = "";
           std::advance(character, -1);
