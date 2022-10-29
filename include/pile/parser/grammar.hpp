@@ -30,6 +30,7 @@ namespace pile::Parser::Grammar {
     explicit Empty() : GrammarElement{"ε"} {}
   };
 
+  // NOTE: Perhaps I should change this name to NonTerminal instead
   struct Production : GrammarElement {
     explicit Production(std::string const &content) {
       // Remove <> if present

@@ -16,6 +16,7 @@ namespace pile::Parser {
     void compute_follow_set();
 
     void find_first_set(const Grammar::Production &production);
+    void find_follow_set(const Grammar::Production &production);
 
   public:
     explicit LL1(Grammar::GrammarContent grammar) : grammar(grammar) {
