@@ -4,7 +4,7 @@
 #include <pile/parser/grammar.hpp>
 #include <stdexcept>
 
-TEST(parser, ShouldOpenFile) {
+TEST(grammar, ShouldOpenFile) {
   using namespace pile::Parser;
 
   try {
@@ -14,7 +14,7 @@ TEST(parser, ShouldOpenFile) {
   }
 }
 
-TEST(parser, ShouldFailOpeningFile) {
+TEST(grammar, ShouldFailOpeningFile) {
   using namespace pile::Parser;
 
   try {
@@ -26,7 +26,7 @@ TEST(parser, ShouldFailOpeningFile) {
   }
 }
 
-TEST(parser, ShouldComputeGrammar) {
+TEST(grammar, ShouldComputeGrammar) {
   using namespace pile::Parser::Grammar;
 
   try {
@@ -53,7 +53,7 @@ TEST(parser, ShouldComputeGrammar) {
   }
 }
 
-TEST(parser, ShouldNotComputeGrammar) {
+TEST(grammar, ShouldNotComputeGrammar) {
   using namespace pile::Parser::Grammar;
 
   try {
@@ -79,4 +79,3 @@ TEST(parser, ShouldNotComputeGrammar) {
     FAIL() << "Should not throw";
   }
 }
-

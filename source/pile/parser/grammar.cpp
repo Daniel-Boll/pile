@@ -4,9 +4,6 @@
 #include <pile/parser/grammar.hpp>
 #include <string_view>
 
-template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
-
 namespace pile::Parser::Grammar {
   bool is_production(std::string const &element) {
     // Begin and end with <>
