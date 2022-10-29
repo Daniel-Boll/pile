@@ -4,7 +4,7 @@
 
 TEST(lexer, lexer) {
   std::vector<std::string> include_dir{"."};
-  auto res = pile::Lexer::analyze("example/test.pile", &include_dir);
+  auto res = pile::Lexer::analyze("example/macros.pile", &include_dir);
 
-  ASSERT_EQ(res.tokens.size(), 6);
+  ASSERT_EQ(res.tokens.size(), 4);
 }
