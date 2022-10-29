@@ -17,7 +17,7 @@ namespace pile::Parser::Grammar {
 
   void GrammarContent::print() const {
     for (auto const &[production, elements] : content) {
-      fmt::print("{} -> ", production.content);
+      fmt::print("<{}> -> ", production.content);
       for (auto const &element : elements)
         std::visit(
             overloaded{
