@@ -24,7 +24,7 @@ namespace pile::Lexer::Includer {
       // Get all the tokens that are not from the type "space or tab" or "comment"
       std::copy_if(tokens.begin(), tokens.end(), std::back_inserter(final_tokens),
                    [](const Lexer::Token &token) {
-                     return token.type != "space or tab" && token.type != "comment";
+                     return token.type != "space-or-tab" && token.type != "comment";
                    });
 
       line_number++;
