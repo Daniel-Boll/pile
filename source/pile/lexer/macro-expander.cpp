@@ -63,7 +63,7 @@ namespace pile::Lexer::MacroExpander {
     // Expand macros
     token = expanded_tokens.begin();
     while (token != expanded_tokens.end()) {
-      if (token->type == "identifier") {
+      if (token->type == "id") {
         auto macro = macros[token->lexeme];
         // Keep both the filename and position of the expanded identifier
         auto filename = token->file;

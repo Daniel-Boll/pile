@@ -46,6 +46,8 @@ namespace pile::Lexer {
       auto current_node = std::ranges::find_if(
           nodes, [current_node_id](auto node) { return node.id == current_node_id; });
 
+      // fmt::print("Current node: {}\n", current_node_id);
+
       switch (current_node->type) {
         case NodeType::Normal: {
           for (auto [regex, next] : current_node->transitions) {

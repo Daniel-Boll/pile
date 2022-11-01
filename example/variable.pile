@@ -1,5 +1,7 @@
-def(i32) index
+i32 index
 0 @index 
+
+index::f32
 
 while index 10 >= do
     index dup dump \ duplicate the value because dump consumes it and we'll need another one to the increment below

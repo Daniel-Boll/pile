@@ -1,8 +1,7 @@
 {
-  "keywords": ["if", "while", "do", "swap", "else", "end", "dup", "dump", "macro", "def(i32)", "range"],
+  "keywords": ["f32", "f64", "i32", "bool", "if", "while", "do", "else", "macro", "end", "swap", "dup", "dup2", "dump", "range"],
   "categories": {
     "control_flow": ["if", "while", "do", "else", "end"],
-    "memory": ["memory"],
     "stack": ["dup", "dump"],
     "preprocessor": ["macro"]
   },
@@ -14,415 +13,182 @@
     "string_content": "([^\"\\\n]|\\.)",
     "identifier_start": "[a-zA-Z_]",
     "identifier_body": "[a-zA-Z0-9_?!()]",
-    "arithmetic_symbols": "[+*%]"
+    "arithmetic_symbols": "[-+*%/]",
+    "comparison_symbols": "[><!]",
+    "comment_body": "([^\\n]|\\.)"
   },
   "nodes": {
     "initial": {
       "type": "normal",
       "transitions": {
-        "0": "1",
-        "{digit_except_zero}": "2",
+        "\\\\": "cmt-1",
+        ":": "cast-1",
         "\"": "str-1",
-        "\\\\": "23",
-        "{identifier_start}": "25",
-        "{space_and_tabs}": "27",
-        "@": "28",
-        "{arithmetic_symbols}": "31",
-        "(>|!|<)": "32",
-        "=": "33",
-        "-": "47",
-        ":": "52",
-        "{outro}": "35"
+        "{space_and_tabs}": "space-or-tab",
+        "@": "assign-op",
+        "[><!]": "cmp-1",
+        "=": "cmp-op",
+        "{identifier_start}": "id-1",
+        "{arithmetic_symbols}": "arithmetic-op",
+        "0": "num-1",
+        "{digit_except_zero}": "num-3",
+        "{outro}": "error_404"
       }
     },
-    "1": {
+    "cmt-1": {
       "type": "normal",
       "transitions": {
-        "x": "3",
-        "{digit}": "2",
-        "\\.": "5",
-        ":": "48",
-        "{outro}": "4"
+        "{comment_body}": "cmt-1",
+        "\n": "comment",
+        "{outro*}": "4"
       }
     },
-    "2": {
-      "type": "normal",
-      "transitions": {
-        "{digit}": "2",
-        "\\.": "5",
-        ":": "48",
-        "{outro}": "4"
-      }
-    },
-    "3": {
-      "type": "normal",
-      "transitions": {
-        "{hex_digit}": "44",
-        "{outro}": "45"
-      }
-    },
-    "4": {
+    "comment": {
       "type": "computer",
-      "computes": "integer-literal",
+      "computes": "comment",
       "exception": "backtrack"
     },
-    "5": {
+    "cast-1": {
       "type": "normal",
       "transitions": {
-        "{digit}": "6",
-        "{outro}": "38"
+        ":": "cast-op",
+        "{outro}": "cast-syntax-error"
       }
     },
-    "6": {
-      "type": "normal",
-      "transitions": {
-        "{digit}": "6",
-        ":": "46",
-        "{outro}": "7"
-      }
-    },
-    "7": {
+    "cast-op": {
       "type": "computer",
-      "computes": "float-literal",
-      "exception": "backtrack"
+      "computes": "cast-op"
     },
-    "8": {
-      "type": "normal",
-      "transitions": {
-        "3": "9",
-        "6": "11",
-        "{outro}": "41"
-      }
-    },
-    "9": {
-      "type": "normal",
-      "transitions": {
-        "2": "10",
-        "{outro}": "42"
-      }
-    },
-    "10": {
-      "type": "computer",
-      "computes": "f32",
-      "exception": "remove_cast"
-    },
-    "11": {
-      "type": "normal",
-      "transitions": {
-        "4": "12",
-        "{outro}": "43"
-      }
-    },
-    "12": {
-      "type": "computer",
-      "computes": "f64",
-      "exception": "remove_cast"
-    },
-    "13": {
-      "type": "normal",
-      "transitions": {
-        "o": "14",
-        "{outro}": "40"
-      }
-    },
-    "14": {
-      "type": "normal",
-      "transitions": {
-        "o": "15",
-        "{outro}": "40"
-      }
-    },
-    "15": {
-      "type": "normal",
-      "transitions": {
-        "l": "16",
-        "{outro}": "40"
-      }
-    },
-    "16": {
-      "type": "computer",
-      "computes": "bool",
-      "exception": "remove_cast"
-    },
-    "17": {
-      "type": "normal",
-      "transitions": {
-        "3": "18",
-        "{outro}": "39"
-      }
-    },
-    "18": {
-      "type": "normal",
-      "transitions": {
-        "2": "19",
-        "{outro}": "39"
-      }
-    },
-    "19": {
-      "type": "computer",
-      "computes": "i32",
-      "exception": "remove_cast"
-    },
-    "20": {
-      "type": "computer",
-      "computes": "i32",
-      "exception": "compute_hex"
+    "cast-syntax-error": {
+      "type": "error",
+      "error": "Invalid cast syntax"
     },
     "str-1": {
       "type": "normal",
       "transitions": {
         "{string_content}": "str-1",
-        "[\\\n]": "error-invalid-string",
-        "\"": "string-literal"
+        "\"": "string-literal",
+        "{outro}": "error_invalid_string"
       }
     },
     "string-literal": {
       "type": "computer",
-      "computes": "string"
+      "computes": "string-literal"
     },
-    "23": {
-      "type": "normal",
-      "transitions": {
-        "([^\n]|.)": "23",
-        "\n": "24"
-      }
-    },
-    "24": {
-      "type": "computer",
-      "computes": "comment",
-      "exception": "backtrack"
-    },
-    "25": {
-      "type": "normal",
-      "transitions": {
-        "{identifier_body}": "25",
-        "{outro}": "26"
-      }
-    },
-    "26": {
-      "type": "computer",
-      "computes": "identifier",
-      "exception": "identify_token_property"
-    },
-    "27": {
-      "type": "computer",
-      "computes": "space or tab"
-    },
-    "28": {
-      "type": "normal",
-      "transitions": {
-        "{identifier_start}": "29",
-        "{outro}": "37"
-      }
-    },
-    "29": {
-      "type": "normal",
-      "transitions": {
-        "{identifier_body}": "29",
-        "{outro}": "30"
-      }
-    },
-    "30": {
-      "type": "computer",
-      "computes": "assign_id",
-      "exception": "remove_assign_identifier"
-    },
-    "31": {
-      "type": "computer",
-      "computes": "arithmetic_operator"
-    },
-    "32": {
-      "type": "normal",
-      "transitions": {
-        "=": "33",
-        "{outro}": "34"
-      }
-    },
-    "33": {
-      "type": "computer",
-      "computes": "comparison_operator"
-    },
-    "34": {
-      "type": "computer",
-      "computes": "comparison_operator",
-      "exception": "backtrack"
-    },
-    "35": {
-      "type": "error",
-      "error": "Invalid character"
-    },
-    "error-invalid-string": {
+    "error_invalid_string": {
       "type": "error",
       "error": "Invalid string"
     },
-    "37": {
-      "type": "error",
-      "error": "Invalid identifier"
-    },
-    "38": {
-      "type": "error",
-      "error": "Invalid float"
-    },
-    "39": {
-      "type": "error",
-      "error": "Invalid cast, expected i32"
-    },
-    "40": {
-      "type": "error",
-      "error": "Invalid cast, expected bool"
-    },
-    "41": {
-      "type": "error",
-      "error": "Invalid cast, expected f32 or f64"
-    },
-    "42": {
-      "type": "error",
-      "error": "Invalid cast, expected f32"
-    },
-    "43": {
-      "type": "error",
-      "error": "Invalid cast, expected f62"
-    },
-    "44": {
-      "type": "normal",
-      "transitions": {
-        "{hex_digit}": "44",
-        "{outro}": "20"
-      }
-    },
-    "45": {
-      "type": "error",
-      "error": "Invalid hex"
-    },
-    "46": {
-      "type": "normal",
-      "transitions": {
-        ":": "51",
-        "{outro}": "50"
-      }
-    },
-    "47": {
-      "type": "normal",
-      "transitions": {
-        "{digit}": "2",
-        "{outro}": "31"
-      }
-    },
-    "48": {
-      "type": "normal",
-      "transitions": {
-        ":": "49",
-        "{outro}": "50"
-      }
-    },
-    "49": {
-      "type": "normal",
-      "transitions": {
-        "f": "8",
-        "b": "13",
-        "i": "17",
-        "{outro}": "50"
-      }
-    },
-    "50": {
-      "type": "error",
-      "error": "Invalid cast syntax"
-    },
-    "51": {
-      "type": "normal",
-      "transitions": {
-        "f": "8",
-        "{outro}": "41"
-      }
-    },
-    "52": {
-      "type": "normal",
-      "transitions": {
-        ":": "53",
-        "{outro}": "50"
-      }
-    },
-    "53": {
-      "type": "normal",
-      "transitions": {
-        "f": "54",
-        "i": "59",
-        "b": "62",
-        "{outro}": "50"
-      }
-    },
-    "54": {
-      "type": "normal",
-      "transitions": {
-        "3": "55",
-        "6": "57",
-        "{outro}": "41"
-      }
-    },
-    "55": {
-      "type": "normal",
-      "transitions": {
-        "2": "56",
-        "{outro}": "42"
-      }
-    },
-    "56": {
+    "space-or-tab": {
       "type": "computer",
-      "computes": "cast(f32)"
+      "computes": "space-or-tab"
     },
-    "57": {
-      "type": "normal",
-      "transitions": {
-        "4": "58",
-        "{outro}": "43"
-      }
-    },
-    "58": {
+    "assign-op": {
       "type": "computer",
-      "computes": "cast(f64)"
+      "computes": "assign-op"
     },
-    "59": {
+    "cmp-1": {
       "type": "normal",
       "transitions": {
-        "3": "60",
-        "{outro}": "41"
+        "=": "cmp-op",
+        "{outro}": "cmp-op*"
       }
     },
-    "60": {
-      "type": "normal",
-      "transitions": {
-        "2": "61",
-        "{outro}": "39"
-      }
-    },
-    "61": {
+    "cmp-op": {
       "type": "computer",
-      "computes": "cast(i32)"
+      "computes": "cmp-op"
     },
-    "62": {
-      "type": "normal",
-      "transitions": {
-        "o": "63",
-        "{outro}": "39"
-      }
-    },
-    "63": {
-      "type": "normal",
-      "transitions": {
-        "o": "64",
-        "{outro}": "39"
-      }
-    },
-    "64": {
-      "type": "normal",
-      "transitions": {
-        "l": "65",
-        "{outro}": "39"
-      }
-    },
-    "65": {
+    "cmp-op*": {
       "type": "computer",
-      "computes": "cast(bool)"
+      "computes": "cmp-op",
+      "exception": "backtrack"
+    },
+    "id-1": {
+      "type": "normal",
+      "transitions": {
+        "{identifier_body}": "id-1",
+        "{outro}": "id"
+      }
+    },
+    "id": {
+      "type": "computer",
+      "computes": "id",
+      "exception": "identify_token_property"
+    },
+    "arithmetic-op": {
+      "type": "computer",
+      "computes": "arithmetic-op"
+    },
+    "num-1": {
+      "type": "normal",
+      "transitions": {
+        "x": "num-2",
+        "\\.": "num-5",
+        "{outro}": "integer-literal"
+      }
+    },
+    "num-2": {
+      "type": "normal",
+      "transitions": {
+        "{hex_digit}": "num-4",
+        "{outro}": "error_hex"
+      }
+    },
+    "num-3": {
+      "type": "normal",
+      "transitions": {
+        "{digit}": "num-3",
+        "\\.": "num-5",
+        "{outro}": "integer-literal"
+      }
+    },
+    "num-4": {
+      "type": "normal",
+      "transitions": {
+        "{hex_digit}": "num-4",
+        "{outro}": "hex"
+      }
+    },
+    "num-5": {
+      "type": "normal",
+      "transitions": {
+        "{digit}": "num-6",
+        "{outro}": "error_float_syntax"
+      }
+    },
+    "num-6": {
+      "type": "normal",
+      "transitions": {
+        "{digit}": "num-6",
+        "{outro}": "float-literal"
+      }
+    },
+    "integer-literal": {
+      "type": "computer",
+      "computes": "integer-literal",
+      "exception": "backtrack"
+    },
+    "float-literal": {
+      "type": "computer",
+      "computes": "float-literal",
+      "exception": "backtrack"
+    },
+    "hex": {
+      "type": "computer",
+      "computes": "hex",
+      "exception": "compute_hex"
+    },
+    "error_hex": {
+      "type": "error",
+      "error": "Invalid hex number"
+    },
+    "error_float_syntax": {
+      "type": "error",
+      "error": "Invalid float syntax"
+    },
+    "error_404": {
+      "type": "error",
+      "error": "404"
     }
   }
 }
