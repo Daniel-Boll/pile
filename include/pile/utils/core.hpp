@@ -2,7 +2,7 @@
 
 #include <pile/utils/common.hpp>
 
-#define PILE_VERSION "0.1.3"
+#define PILE_VERSION "0.1.4"
 #define uninplemented()                                             \
   spdlog::error("Unimplemented function: {}", __PRETTY_FUNCTION__); \
   exit(1);

@@ -12,6 +12,10 @@ namespace pile::Parser::Grammar {
 
   bool is_empty(std::string const &element) { return element == "ε"; }
 
+  bool is_terminal(std::string const &element) {
+    return !is_production(element) && !is_empty(element);
+  }
+
   void GrammarContent::print() const {
     for (auto const &[production, elements] : content) {
       fmt::print("<{}> -> ", production.content);

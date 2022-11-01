@@ -8,6 +8,7 @@
 <type> -> i32 | f32 | f64 | bool
 <variable-declaration> -> <type> id
 <assign-to-identifier> -> @ id
+<numeric-literal> -> integer-literal | float-literal | bool
 
 <stack-ops> -> drop | swap | dup | dup2 | over | dump
 

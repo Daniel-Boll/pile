@@ -1,5 +1,5 @@
 {
-  "keywords": ["if", "while", "do", "memory", "else", "end", "dup", "dump", "macro", "def(i32)", "range"],
+  "keywords": ["if", "while", "do", "swap", "else", "end", "dup", "dump", "macro", "def(i32)", "range"],
   "categories": {
     "control_flow": ["if", "while", "do", "else", "end"],
     "memory": ["memory"],
@@ -63,7 +63,7 @@
     },
     "4": {
       "type": "computer",
-      "computes": "i32",
+      "computes": "integer-literal",
       "exception": "backtrack"
     },
     "5": {
@@ -83,7 +83,7 @@
     },
     "7": {
       "type": "computer",
-      "computes": "f32",
+      "computes": "float-literal",
       "exception": "backtrack"
     },
     "8": {

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2022-10-31
+### Added
+- LL(1) parsing table generation
+- LL(1) parsing table parsing for strings input
+- LL(1) parsing table parsing tests for strings input
+
 ## [0.1.3] - 2022-10-29
 ### Added
 - LL(1) first set tests

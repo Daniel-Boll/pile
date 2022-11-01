@@ -76,6 +76,7 @@ namespace pile::Parser::Grammar {
 
   bool is_production(std::string const &element);
   bool is_empty(std::string const &element);
+  bool is_terminal(std::string const &element);
 
   template <FixedString path> GrammarContent parse() {
     std::ifstream file(path.content);
