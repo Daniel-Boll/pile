@@ -18,28 +18,28 @@ namespace pile::Parser {
     } while (prev_first_set != this->first_set);
 
     // Print first set
-    // fmt::print("First set:\n");
-    // for (const auto [production, first_set] : this->first_set) {
-    //   fmt::print("{} : ", production.content);
-    //
-    //   std::vector set_to_vector(first_set.begin(), first_set.end());
-    //
-    //   // Reverse the order of the elements
-    //   for (const auto symbol : set_to_vector) {
-    //     // Get elements from the set
-    //     std::visit(
-    //         overloaded{
-    //             [](const Grammar::Terminal &terminal) { fmt::print("{} ", terminal.content); },
-    //             [](const Grammar::Production &non_terminal) {
-    //               fmt::print("{} ", non_terminal.content);
-    //             },
-    //             [](const Grammar::Empty &empty) { fmt::print("{} ", empty.content); }},
-    //         symbol);
-    //   }
-    //
-    //   fmt::print("\n");
-    // }
-    // fmt::print("\n");
+    fmt::print("First set:\n");
+    for (const auto [production, first_set] : this->first_set) {
+      fmt::print("{} : ", production.content);
+
+      std::vector set_to_vector(first_set.begin(), first_set.end());
+
+      // Reverse the order of the elements
+      for (const auto symbol : set_to_vector) {
+        // Get elements from the set
+        std::visit(
+            overloaded{
+                [](const Grammar::Terminal &terminal) { fmt::print("{} ", terminal.content); },
+                [](const Grammar::Production &non_terminal) {
+                  fmt::print("{} ", non_terminal.content);
+                },
+                [](const Grammar::Empty &empty) { fmt::print("{} ", empty.content); }},
+            symbol);
+      }
+
+      fmt::print("\n");
+    }
+    fmt::print("\n");
 
     return this;
   }
@@ -59,26 +59,27 @@ namespace pile::Parser {
     }
 
     // Print follow set
-    // fmt::print("Follow set:\n");
-    // for (const auto [production, follow_set] : this->follow_set) {
-    //   fmt::print("{} : ", production.content);
-    //
-    //   std::vector set_to_vector(follow_set.begin(), follow_set.end());
-    //
-    //   // Reverse the order of the elements
-    //   for (const auto symbol : set_to_vector) {
-    //     // Get elements from the set
-    //     std::visit(
-    //         overloaded{
-    //             [](const Grammar::Terminal &terminal) { fmt::print("{} ", terminal.content); },
-    //             [](const Grammar::Production &non_terminal) {
-    //               fmt::print("{} ", non_terminal.content);
-    //             },
-    //             [](const Grammar::Empty &empty) { fmt::print("{} ", empty.content); }},
-    //         symbol);
-    //   }
-    //   fmt::print("\n");
-    // }
+    fmt::print("Follow set:\n");
+    for (const auto [production, follow_set] : this->follow_set) {
+      fmt::print("{} : ", production.content);
+
+      std::vector set_to_vector(follow_set.begin(), follow_set.end());
+
+      // Reverse the order of the elements
+      for (const auto symbol : set_to_vector) {
+        // Get elements from the set
+        std::visit(
+            overloaded{
+                [](const Grammar::Terminal &terminal) { fmt::print("{} ", terminal.content); },
+                [](const Grammar::Production &non_terminal) {
+                  fmt::print("{} ", non_terminal.content);
+                },
+                [](const Grammar::Empty &empty) { fmt::print("{} ", empty.content); }},
+            symbol);
+      }
+      fmt::print("\n");
+    }
+    fmt::print("\n");
 
     return this;
   }
@@ -210,10 +211,10 @@ namespace pile::Parser {
   }
 
   LL1 *LL1::compute_parsing_table() {
-    // For each production in the grammar
+    // For each production in the grammar (foreach prod A -> alpha in G)
     for (const auto &[production, symbols] : this->grammar.content) {
       std::string concatenated_symbols;
-      // Reverse append symbols joined by space into concatenated_symbols
+      // Append symbols joined by space into concatenated_symbols
       std::ranges::for_each(symbols, [&concatenated_symbols](const auto &symbol) {
         std::visit(overloaded{[&concatenated_symbols](const Grammar::Terminal &terminal) {
                                 concatenated_symbols += terminal.content + " ";
@@ -229,12 +230,17 @@ namespace pile::Parser {
 
       const bool has_more_than_one_production = this->more_than_one_production(production);
 
-      // For each terminal in the first set of the production
+      // For each terminal in the first set of the production (foreach x in FIRST(A))
       for (const auto &terminal : this->first_set[production]) {
+        const auto debug = production.content == "numeric-literal";
+
         // If the terminal is the empty symbol, then continue
         if (std::holds_alternative<Grammar::Empty>(terminal)
             || concatenated_symbols == Grammar::Empty{}.content + " ")
           continue;
+
+        // this->parsing_table(production.content, std::get<Grammar::Terminal>(terminal).content)
+        //     = concatenated_symbols;
 
         if (!has_more_than_one_production) {
           this->parsing_table(production.content, std::get<Grammar::Terminal>(terminal).content)
@@ -276,7 +282,7 @@ namespace pile::Parser {
   }
 
   bool LL1::parse(const std::string &input) const {
-    fmt::print("{}\n", this->parsing_table);
+    fmt::print("Parsing table:\n{}\n", this->parsing_table);
 
     std::vector<std::string> stack;
     std::string input_tape = input + " $";
@@ -360,7 +366,7 @@ namespace pile::Parser {
     fmt::print("{}\n", this->parsing_table);
 
     std::vector<std::string> stack;
-    std::vector<Lexer::Token> input_tape = tokens;
+    std::deque<Lexer::Token> input_tape(tokens.rbegin(), tokens.rend());
     input_tape.push_back(Lexer::Token{.lexeme = "$"});
 
     const auto first_production = fmt::format("<{}>", this->grammar.content[0].first.content);
@@ -388,7 +394,6 @@ namespace pile::Parser {
       });
       input_tape_content = input_tape_content.substr(0, input_tape_content.size() - 1);
       input_tape_content = input_tape_content.substr(input_tape_content.find_first_of(" ") + 1);
-      fmt::print("[{}]\n", input_tape_content);
 
       // if input tape content is just $, then set it to empty
       if (input_tape_content == "$") input_tape_content = "";
@@ -402,13 +407,19 @@ namespace pile::Parser {
       fmt::print("{}{}\t | {} {}\n", stack_content, print_top, print_input_symbol,
                  input_tape_content);
 
+      // If top is a terminal
       if (Grammar::is_terminal(top)) {
+        // If top is the same as the first character of the input tape
         if (top != input_symbol) return false;
 
+        // Pop top from the stack
         stack.pop_back();
 
-        input_tape.erase(input_tape.begin());
+        // Remove the input symbol from the input tape
+        input_tape.pop_front();
       } else {
+        // Remove the angle brackets from the production
+        // <a> => a
         top = top.substr(1, top.size() - 2);
 
         // If the parsing table has that production and terminal
