@@ -1,6 +1,8 @@
 
+#include <numeric>
 #include <pile/parser/LL(1)/parser.hpp>
 #include <pile/utils/template.hpp>
+#include <ranges>
 
 #include "spdlog/fmt/bundled/args.h"
 #include "spdlog/fmt/bundled/color.h"
@@ -211,70 +213,67 @@ namespace pile::Parser {
   }
 
   LL1 *LL1::compute_parsing_table() {
+    // // For each production in the grammar (foreach prod A -> alpha in G)
+    // for (const auto &[production, symbols] : this->grammar.content) {
+    //   fmt::print("\nProduction: {}\n", production.content);
+    //
+    //   // For each symbol in the first set of the production (foreach symbol a in FIRST(A))
+    //   for (const auto &first_set_symbols : this->first_set[production]) {
+    //     std::string symbol
+    //         = std::visit([](const auto &symbol) { return symbol.content; }, first_set_symbols);
+    //     std::string symbols_string = std::accumulate(
+    //         symbols.begin(), symbols.end(), std::string{}, [](const auto &acc, const auto
+    //         &symbol) {
+    //           return acc + std::visit([](const auto &symbol) { return symbol.content; }, symbol);
+    //         });
+    //
+    //     parsing_table(production.content, symbol) = symbols_string;
+    //   }
+    // }
+
     // For each production in the grammar (foreach prod A -> alpha in G)
     for (const auto &[production, symbols] : this->grammar.content) {
-      std::string concatenated_symbols;
-      // Append symbols joined by space into concatenated_symbols
-      std::ranges::for_each(symbols, [&concatenated_symbols](const auto &symbol) {
-        std::visit(overloaded{[&concatenated_symbols](const Grammar::Terminal &terminal) {
-                                concatenated_symbols += terminal.content + " ";
-                              },
-                              [&concatenated_symbols](const Grammar::Production &production) {
-                                concatenated_symbols += fmt::format("<{}> ", production.content);
-                              },
-                              [&concatenated_symbols](const Grammar::Empty &empty) {
-                                concatenated_symbols += empty.content + " ";
-                              }},
-                   symbol);
-      });
+      fmt::print("\nProduction: {}\n", production.content);
 
-      const bool has_more_than_one_production = this->more_than_one_production(production);
-
-      // For each terminal in the first set of the production (foreach x in FIRST(A))
-      for (const auto &terminal : this->first_set[production]) {
-        const auto debug = production.content == "numeric-literal";
-
-        // If the terminal is the empty symbol, then continue
-        if (std::holds_alternative<Grammar::Empty>(terminal)
-            || concatenated_symbols == Grammar::Empty{}.content + " ")
-          continue;
-
-        // this->parsing_table(production.content, std::get<Grammar::Terminal>(terminal).content)
-        //     = concatenated_symbols;
-
-        if (!has_more_than_one_production) {
-          this->parsing_table(production.content, std::get<Grammar::Terminal>(terminal).content)
-              = concatenated_symbols;
+      // For each symbol in the rhs of the production (foreach symbol a in alpha)
+      bool finished = false;
+      // next_list
+      std::set<std::string> next_list;
+      for (const auto &symbol : symbols) {
+        // If the symbols is a terminal add it to the next_list
+        if (std::holds_alternative<Grammar::Terminal>(symbol)) {
+          next_list.insert(std::get<Grammar::Terminal>(symbol).content);
+          finished = true;
           continue;
         }
 
-        // Check if the terminal and the concatenated_symbols begin with the same character
-        if (concatenated_symbols[0] == std::get<Grammar::Terminal>(terminal).content[0]) {
-          this->parsing_table(production.content, std::get<Grammar::Terminal>(terminal).content)
-              = concatenated_symbols;
-          continue;
-        }
+        // Add the first set of the symbol to the next_list transforming it to a string
+        // except the $ and the empty symbol
+        std::vector<std::string> free_symbols;
+        for (const auto &first_set_symbols : this->first_set[std::get<Grammar::Production>(symbol)])
+          if (std::holds_alternative<Grammar::Terminal>(first_set_symbols))
+            free_symbols.push_back(std::get<Grammar::Terminal>(first_set_symbols).content);
+
+        std::ranges::copy(free_symbols, std::inserter(next_list, next_list.end()));
       }
 
-      // If the first set of the production contains the empty symbol
-      if (concatenated_symbols == Grammar::Empty{}.content + " ") {
-        // For each terminal in the follow set of the production
-        for (const auto &terminal : this->follow_set[production]) {
-          std::string terminal_content;
-          std::visit(overloaded{[&terminal_content](const Grammar::Terminal &terminal) {
-                                  terminal_content = terminal.content;
-                                },
-                                [&terminal_content](const Grammar::Production &production) {
-                                  terminal_content = production.content;
-                                },
-                                [&terminal_content](const Grammar::Empty &empty) {
-                                  terminal_content = empty.content;
-                                }},
-                     terminal);
+      // If the next_list contains the empty symbol, then add the follow set of the production to
+      // the next_list
+      if (!finished)
+        std::ranges::transform(this->follow_set[production],
+                               std::inserter(next_list, next_list.end()), [](const auto &symbol) {
+                                 return std::visit(
+                                     [](const auto &symbol) { return symbol.content; }, symbol);
+                               });
 
-          // Add the production to the parsing table
-          this->parsing_table(production.content, terminal_content) = concatenated_symbols;
-        }
+      // For each symbol in the next_list (foreach symbol a in next_list)
+      for (const auto &symbol : next_list) {
+        std::string symbols_string = std::accumulate(
+            symbols.begin(), symbols.end(), std::string{}, [](const auto &acc, const auto &symbol) {
+              return acc + std::visit([](const auto &symbol) { return symbol.content; }, symbol);
+            });
+
+        parsing_table(production.content, symbol) = symbols_string;
       }
     }
 
