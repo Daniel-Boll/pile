@@ -1,0 +1,112 @@
+#pragma once
+
+#include <fstream>
+#include <pile/utils/template.hpp>
+#include <pile/utils/utils.hpp>
+#include <string>
+#include <variant>
+#include <vector>
+
+namespace pile::Parser::Grammar {
+  /* =============== Data Types =============== */
+  struct GrammarElement {
+    std::string content;
+
+    bool operator==(GrammarElement const &other) const { return content == other.content; }
+  };
+
+  struct Terminal : GrammarElement {
+    explicit Terminal(std::string const &content) : GrammarElement{content} {}
+  };
+
+  struct Empty : GrammarElement {
+    explicit Empty() : GrammarElement{""} {}
+  };
+
+  struct Production : GrammarElement {
+    explicit Production(std::string const &content) {
+      // Remove <> if present
+      if (content[0] == '<' && content[content.size() - 1] == '>') {
+        this->content = content.substr(1, content.size() - 2);
+      } else {
+        this->content = content;
+      }
+    }
+  };
+
+  using grammar_content_t
+      = std::vector<std::pair<Production, std::vector<std::variant<Terminal, Production, Empty>>>>;
+
+  struct GrammarContent {
+    grammar_content_t content;
+
+    explicit GrammarContent(grammar_content_t const &content) : content{content} {}
+
+    // Empty grammar
+    GrammarContent() = default;
+
+    void print() const;
+
+    static bool equal(grammar_content_t const &lhs, grammar_content_t const &rhs) {
+      if (lhs.size() != rhs.size()) return false;
+
+      for (auto i = 0; i < lhs.size(); ++i) {
+        if (lhs[i].first != rhs[i].first) return false;
+
+        if (lhs[i].second.size() != rhs[i].second.size()) return false;
+
+        for (auto j = 0; j < lhs[i].second.size(); ++j)
+          if (lhs[i].second[j] != rhs[i].second[j]) return false;
+      }
+
+      return true;
+    }
+  };
+  /* ========================================== */
+
+  bool is_production(std::string const &element);
+  bool is_empty(std::string const &element);
+
+  template <FixedString path> GrammarContent parse() {
+    std::ifstream file(path.content);
+    if (!file.is_open()) throw std::string("Could not open file: ") + path.content;
+
+    // Parse GLC file
+    GrammarContent grammar;
+    std::string line;
+    while (std::getline(file, line)) {
+      if (line.find("//") != std::string::npos) continue;
+      if (line.empty()) continue;
+
+      // Split line into production and productions
+      auto const result = pile::utils::split(line, " -> ");
+      auto const production = result[0];
+      auto const productions = pile::utils::split(result[1], " | ");
+
+      // Check if production is valid
+      if (!is_production(production)) throw std::string("Invalid production: ") + production;
+
+      // Parse productions
+      for (auto const &_production : productions) {
+        // Split production into grammar elements
+        auto const grammar_elements = pile::utils::split(_production, " ");
+
+        // Parse grammar elements
+        std::vector<std::variant<Terminal, Production, Empty>> parsed_grammar_elements;
+        std::ranges::transform(
+            grammar_elements, std::back_inserter(parsed_grammar_elements),
+            [](auto const &grammar_element) -> std::variant<Terminal, Production, Empty> {
+              if (is_production(grammar_element)) return Production{grammar_element};
+              if (is_empty(grammar_element)) return Empty{};
+              return Terminal{grammar_element};
+            });
+
+        // Add production to grammar
+        grammar.content.push_back({Production{production}, parsed_grammar_elements});
+      }
+    }
+
+    return grammar;
+  }
+
+}  // namespace pile::Parser::Grammar
