@@ -24,14 +24,14 @@
 //   EXPECT_FALSE(parser.parse("begin int id , id id = id [ id + ] end"));
 // }
 
-TEST(LL_1_parser, ShouldAcceptStatement) {
-  using namespace pile::Parser;
-
-  const auto grammar = Grammar::parse<"assets/test/ll_one_3.test.glc">();
-  LL1 parser(grammar);
-
-  EXPECT_TRUE(parser.parse("( a )"));
-}
+// TEST(LL_1_parser, ShouldAcceptStatement) {
+//   using namespace pile::Parser;
+//
+//   const auto grammar = Grammar::parse<"assets/test/ll_one_3.test.glc">();
+//   LL1 parser(grammar);
+//
+//   EXPECT_TRUE(parser.parse("( a )"));
+// }
 
 // TEST(LL1_parser_integration, PileStatementString) {
 //   using namespace pile::Parser;

@@ -78,7 +78,12 @@ namespace pile::Parser::Grammar {
   bool is_empty(std::string const &element);
   bool is_terminal(std::string const &element);
 
-  template <FixedString path> GrammarContent parse() {
+  struct ParserProps {
+    bool expand;
+  };
+
+  // Expects a optional ParserProps, otherwise initialize one with expand to false
+  template <FixedString path> GrammarContent parse(ParserProps const &props = {.expand = false}) {
     std::ifstream file(path.content);
     if (!file.is_open()) throw std::string("Could not open file: ") + path.content;
 
@@ -116,6 +121,11 @@ namespace pile::Parser::Grammar {
         grammar.content.push_back({Production{production}, parsed_grammar_elements});
       }
     }
+
+    if (props.expand)
+      grammar.content.insert(
+          grammar.content.begin(),
+          {Production{"S'"}, {Production{grammar.content.front().first.content}}});
 
     return grammar;
   }

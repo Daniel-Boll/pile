@@ -79,3 +79,20 @@ TEST(grammar, ShouldNotComputeGrammar) {
     FAIL() << "Should not throw";
   }
 }
+
+TEST(grammar, ShouldExtendGrammar) {
+  using namespace pile::Parser::Grammar;
+
+  try {
+    auto grammar = parse<"assets/test/grammar_1.test.glc">({.expand = true});
+    GrammarContent expected = GrammarContent{{
+        {Production{"S'"}, {Production{"S"}}},
+        {Production{"S"}, {Production{"S"}, Terminal{"s"}}},
+        {Production{"S"}, {Terminal{"s"}}},
+    }};
+
+    EXPECT_TRUE(GrammarContent::equal(grammar.content, expected.content));
+  } catch (...) {
+    FAIL() << "Should not throw";
+  }
+}
