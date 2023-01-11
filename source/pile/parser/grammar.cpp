@@ -24,11 +24,22 @@ namespace pile::Parser::Grammar {
             overloaded{
                 [](Terminal const &terminal) { fmt::print("{} ", terminal.content); },
                 [](Production const &production) { fmt::print("<{}> ", production.content); },
-                [](Empty const &) { fmt::print("ε "); },
+                [](Empty const &empty) { fmt::print("{} ", empty.content); },
+                [](Dot const &dot) { fmt::print("{} ", dot.content); },
             },
             element);
 
       fmt::print("\n");
     }
+  }
+
+  Grammar::Symbol find_symbol_next_to_dot(Grammar::Symbols const &symbols) {
+    for (auto &symbol : symbols)
+      if (std::holds_alternative<Grammar::Dot>(symbol)) {
+        auto it = std::find(symbols.begin(), symbols.end(), symbol);
+        if (it != symbols.end()) return *(it + 1);
+      }
+
+    return Grammar::Empty{};
   }
 }  // namespace pile::Parser::Grammar

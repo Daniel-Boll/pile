@@ -30,6 +30,10 @@ namespace pile::Parser::Grammar {
     explicit Empty() : GrammarElement{"ε"} {}
   };
 
+  struct Dot : GrammarElement {
+    explicit Dot() : GrammarElement{"·"} {}
+  };
+
   // NOTE: Perhaps I should change this name to NonTerminal instead
   struct Production : GrammarElement {
     explicit Production(std::string const &content) {
@@ -42,7 +46,7 @@ namespace pile::Parser::Grammar {
     }
   };
 
-  using Symbol = std::variant<Terminal, Production, Empty>;
+  using Symbol = std::variant<Terminal, Production, Empty, Dot>;
   using Symbols = std::vector<Symbol>;
 
   using grammar_content_t = std::vector<std::pair<Production, Symbols>>;
@@ -122,12 +126,15 @@ namespace pile::Parser::Grammar {
       }
     }
 
-    if (props.expand)
-      grammar.content.insert(
-          grammar.content.begin(),
-          {Production{"S'"}, {Production{grammar.content.front().first.content}}});
+    if (props.expand) {
+      auto first = grammar.content.front().first.content;
+      grammar.content.insert(grammar.content.begin(),
+                             {Production{fmt::format("{}'", first)}, {Production{first}}});
+    }
 
     return grammar;
   }
+
+  Grammar::Symbol find_symbol_next_to_dot(Grammar::Symbols const &symbols);
 
 }  // namespace pile::Parser::Grammar
