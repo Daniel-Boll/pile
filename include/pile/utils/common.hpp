@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cxxopts.hpp>
 #include <fstream>
+#include <functional>
 #include <map>
 #include <numeric>
 #include <pile/utils/core.hpp>
@@ -15,5 +16,6 @@
 #include <ranges>
 #include <regex>
 #include <set>
-#include <variant>
 #include <tuple>
+#include <variant>
+#include <memory>

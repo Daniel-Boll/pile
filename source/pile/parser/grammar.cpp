@@ -37,7 +37,7 @@ namespace pile::Parser::Grammar {
     for (auto &symbol : symbols)
       if (std::holds_alternative<Grammar::Dot>(symbol)) {
         auto it = std::find(symbols.begin(), symbols.end(), symbol);
-        if (it != symbols.end()) return *(it + 1);
+        if (it != symbols.end() && it + 1 != symbols.end()) return *(it + 1);
       }
 
     return Grammar::Empty{};
