@@ -1,5 +1,7 @@
 #include <pile/parser/SLR/parser.hpp>
 
+#include "pile/parser/grammar.hpp"
+
 namespace pile::Parser {
   using State = SLR::State;
 
@@ -45,18 +47,11 @@ namespace pile::Parser {
     using namespace Grammar;
 
     // Print my address signature
-    fmt::print("{} = {{\n", fmt::ptr(address()));
+    fmt::print("{} = {{\n", id);
+    fmt::print("  .transition = {},\n", Grammar::to_string(transition));
     fmt::print("  .transitions = [");
     for (auto [symbol, state] : transitions) {
-      fmt::print("{{");
-      std::visit(overloaded{
-                     [](Terminal const& terminal) { fmt::print("{}", terminal.content); },
-                     [](Production const& production) { fmt::print("<{}>", production.content); },
-                     [](Empty const& empty) { fmt::print("{}", empty.content); },
-                     [](Dot const& dot) { fmt::print("{}", dot.content); },
-                 },
-                 symbol),
-          fmt::print(", {}}},", fmt::ptr(state->address()));
+      fmt::print("{{{}, {}}}", Grammar::to_string(symbol), state->id);
     }
     fmt::print("],\n");
 
@@ -64,21 +59,13 @@ namespace pile::Parser {
 
     for (auto& [production, symbols] : productions) {
       fmt::print("    <{}> -> ", production.content);
-      for (auto& symbol : symbols)
-        std::visit(
-            overloaded{
-                [](Terminal const& terminal) { fmt::print("{} ", terminal.content); },
-                [](Production const& production) { fmt::print("<{}> ", production.content); },
-                [](Empty const& empty) { fmt::print("{} ", empty.content); },
-                [](Dot const& dot) { fmt::print("{} ", dot.content); },
-            },
-            symbol);
+      for (auto& symbol : symbols) fmt::print("{} ", Grammar::to_string(symbol));
       fmt::print("\n");
     }
 
     fmt::print("  }}\n");
 
-    fmt::print("}}\n");
+    fmt::print("}}\n\n");
 
     return this;
   }
@@ -156,7 +143,7 @@ namespace pile::Parser {
       if (_productions.empty()) continue;
 
       // Generate the goto state
-      std::shared_ptr<State> goto_state = generate_goto_state(_productions, grammar);
+      std::shared_ptr<State> goto_state = generate_goto_state(_productions, nextSymbol, grammar);
       this->push_transition(nextSymbol, goto_state);
     }
 
@@ -164,13 +151,14 @@ namespace pile::Parser {
   }
 
   std::shared_ptr<State> State::generate_goto_state(StateProductions _productions,
+                                                    Grammar::Symbol transition_trigger,
                                                     const Grammar::GrammarContent& grammar) {
     if (auto ref = std::ranges::find_if(
             State::memo, [&_productions](const auto& pair) { return pair.first == _productions; });
         ref != memo.end())
       return ref->second;
 
-    auto state = std::make_shared<State>();
+    auto state = std::make_shared<State>(transition_trigger);
     memo.emplace_back(_productions, state);
 
     for (auto& [production, symbols] : _productions) state->push_production(production, symbols);
@@ -180,4 +168,5 @@ namespace pile::Parser {
   }
 
   std::vector<std::pair<State::StateProductions, std::shared_ptr<State>>> State::memo;
+  uint16_t State::counter;
 }  // namespace pile::Parser

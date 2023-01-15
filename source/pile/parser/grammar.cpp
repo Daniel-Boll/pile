@@ -42,4 +42,23 @@ namespace pile::Parser::Grammar {
 
     return Grammar::Empty{};
   }
+
+  bool is_dot_at_end(Grammar::Symbols const &symbols) {
+    return std::ranges::find_if(
+               symbols,
+               [](Grammar::Symbol symbol) { return std::holds_alternative<Grammar::Dot>(symbol); })
+           == symbols.end() - 1;
+  }
+
+  std::string to_string(Grammar::Symbol const &symbol) {
+    return std::visit(overloaded{
+                          [](Grammar::Terminal const &terminal) { return terminal.content; },
+                          [](Grammar::Production const &production) {
+                            return fmt::format("<{}>", production.content);
+                          },
+                          [](Grammar::Empty const &empty) { return empty.content; },
+                          [](Grammar::Dot const &dot) { return dot.content; },
+                      },
+                      symbol);
+  }
 }  // namespace pile::Parser::Grammar

@@ -96,3 +96,21 @@ TEST(grammar, ShouldExtendGrammar) {
     FAIL() << "Should not throw";
   }
 }
+
+TEST(grammar, ShouldGetSymbolContent) {
+  using namespace pile::Parser;
+
+  try {
+    auto symbolProduction = Grammar::Symbol{Grammar::Production{"S"}};
+    auto symbolTerminal = Grammar::Symbol{Grammar::Terminal{"s"}};
+    auto symbolEmpty = Grammar::Symbol{Grammar::Empty{}};
+    auto symbolDot = Grammar::Symbol{Grammar::Dot{}};
+
+    EXPECT_EQ(Grammar::to_string(symbolProduction), "<S>");
+    EXPECT_EQ(Grammar::to_string(symbolTerminal), "s");
+    EXPECT_EQ(Grammar::to_string(symbolEmpty), "ε");
+    EXPECT_EQ(Grammar::to_string(symbolDot), "·");
+  } catch (...) {
+    FAIL() << "Should not throw";
+  }
+}

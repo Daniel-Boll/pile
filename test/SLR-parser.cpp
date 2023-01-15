@@ -10,11 +10,11 @@ TEST(SLRParser, ShouldCreateI0) {
   using namespace Grammar;
 
   try {
-    auto grammar = parse<"assets/test/SLR_1.test.glc">({.expand = true});
+    auto grammar = parse<"assets/test/SLR_2.test.glc">({.expand = true});
 
     SLR parser{grammar};
 
-    parser.populate_state_machine();
+    parser.parse();
   } catch (...) {
     FAIL() << "Should not throw @ `ShouldCreateI0`";
   }
