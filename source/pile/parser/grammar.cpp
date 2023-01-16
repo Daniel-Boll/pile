@@ -43,6 +43,14 @@ namespace pile::Parser::Grammar {
     return Grammar::Empty{};
   }
 
+  Grammar::Symbols remove_dot(Grammar::Symbols const &symbols) {
+    Grammar::Symbols new_symbols;
+    for (auto &symbol : symbols)
+      if (!std::holds_alternative<Grammar::Dot>(symbol)) new_symbols.push_back(symbol);
+
+    return new_symbols;
+  }
+
   bool is_dot_at_end(Grammar::Symbols const &symbols) {
     return std::ranges::find_if(
                symbols,
@@ -60,5 +68,27 @@ namespace pile::Parser::Grammar {
                           [](Grammar::Dot const &dot) { return dot.content; },
                       },
                       symbol);
+  }
+
+  uint32_t find_production_index(Grammar::GrammarContent const &grammar,
+                                 std::pair<Production, Symbols> const &production) {
+    auto production_without_dot = remove_dot(production.second);
+
+    auto it = std::ranges::find_if(grammar.content, [&](auto const &p) {
+      // The production left and right side should be the same
+      if (p.first.content != production.first.content) return false;
+
+      // The production right side should have the same itens
+      if (p.second.size() != production_without_dot.size()) return false;
+
+      for (auto i = 0; i < p.second.size(); i++)
+        if (to_string(p.second[i]) != to_string(production_without_dot[i])) return false;
+
+      return true;
+    });
+
+    if (it == grammar.content.end()) throw std::runtime_error("Production not found.");
+
+    return std::distance(grammar.content.begin(), it);
   }
 }  // namespace pile::Parser::Grammar

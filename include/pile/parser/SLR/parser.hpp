@@ -6,6 +6,8 @@
 #include <pile/utils/template.hpp>
 #include <pile/utils/utils.hpp>
 
+#include "pile/lexer/lexer.hpp"
+
 namespace pile::Parser {
   class SLR {
   public:
@@ -22,9 +24,6 @@ namespace pile::Parser {
       StateProductions productions;
 
       uint16_t id;
-
-      // NOTE: temporary solution, lol.
-      bool printed = false;
 
       explicit State(const Grammar::Symbol& transition) : transition(transition), id(counter++) {}
       State(const State&) = default;
@@ -52,11 +51,49 @@ namespace pile::Parser {
                                                  const Grammar::GrammarContent& grammar);
     };
 
+    // Table data structure
+    // It should be indexed first by the state id and then by the symbol id.
+    // The data that it stores is the action that should be taken, which is either a shift, a
+    // reduce, an accept or the id of the production transition.
+    struct TableEntry {
+      enum class Action { Shift, Reduce, Accept, Goto, Error };
+
+      uint16_t id;
+      // The data is a tuple of the symbol, the action and the data identifier.
+      std::vector<std::tuple<Grammar::Symbol, Action, uint16_t>> data;
+
+      explicit TableEntry(uint16_t id) : id(id) {}
+
+      static void print_action(Action action, uint16_t data);
+    };
+
+    struct Table {
+      // The table structure
+      std::vector<TableEntry> entries;
+
+      // Operaror overloads
+      TableEntry& operator[](uint16_t id);
+      TableEntry& operator[](const State& state);
+
+      // Add reduce entries
+      Table* add_shift_entries_to_id(uint16_t id, std::tuple<Grammar::Symbol, uint16_t> data);
+      Table* add_reduce_entries_to_id(uint16_t id, std::tuple<Grammar::Symbol, uint16_t> data);
+      Table* add_goto_entries_to_id(uint16_t id, std::tuple<Grammar::Symbol, uint16_t> data);
+      Table* add_accept();
+      std::pair<TableEntry::Action, uint16_t> get_action(uint16_t state_id, std::string symbol);
+      uint16_t get_goto(uint16_t state_id, std::string symbol);
+
+      Table* print();
+      Table* reserve(uint16_t size);
+    };
+
   private:
     Grammar::GrammarContent grammar;
     std::unique_ptr<State> state_machine;
     std::map<Grammar::Production, std::set<Grammar::Symbol>> first_set;
     std::map<Grammar::Production, std::set<Grammar::Symbol>> follow_set;
+
+    Table table;
 
     SLR* compute_follow_set();
 
@@ -71,19 +108,25 @@ namespace pile::Parser {
     template <typename Predicate, typename Callback>
     void state_iterator(Predicate predicate, Callback callback);
 
-    std::vector<std::pair<uint16_t, uint16_t>> find_rule_1_matches();
-    std::vector<std::pair<uint16_t, Grammar::Symbols>> find_rule_2_matches();
+    std::vector<std::tuple<uint16_t, uint16_t, Grammar::Symbol>> find_rule_1_matches();
+    std::vector<std::tuple<uint16_t, uint16_t, Grammar::Symbols>> find_rule_2_matches();
+    std::vector<std::tuple<uint16_t, uint16_t, Grammar::Production>> find_rule_4_matches();
+
+    State* state_at(uint16_t id);
 
   public:
-    explicit SLR(Grammar::GrammarContent grammar)
-        : grammar(grammar), state_machine(new State(grammar.content.begin()->first)) {
+    explicit SLR(Grammar::GrammarContent grammar) {
+      this->grammar = grammar;
+      State::counter = 0;
+      this->state_machine = std::make_unique<State>(this->grammar.content.begin()->first);
       auto [production, elements] = this->grammar.content[0];
-
       state_machine->push_production(production, elements);
+
+      this->compute_follow_set()->populate_state_machine()->generate_table();
     }
 
     SLR* populate_state_machine();
     SLR* generate_table();
-    SLR* parse();
+    bool parse(std::vector<Lexer::Token> tokens);
   };
 }  // namespace pile::Parser

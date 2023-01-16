@@ -136,7 +136,11 @@ namespace pile::Parser::Grammar {
   }
 
   Grammar::Symbol find_symbol_next_to_dot(Grammar::Symbols const &symbols);
+  Grammar::Symbols remove_dot(Grammar::Symbols const &symbols);
   bool is_dot_at_end(Grammar::Symbols const &symbols);
+
+  uint32_t find_production_index(Grammar::GrammarContent const &grammar,
+                                 std::pair<Production, Symbols> const &production);
 
   std::string to_string(Grammar::Symbol const &symbol);
 }  // namespace pile::Parser::Grammar

@@ -33,12 +33,23 @@ namespace pile::Parser {
   }
 
   State* State::print_all() {
-    if (printed) return this;
+    std::deque<State*> queue;
+    std::vector<uint16_t> visited;
 
-    print();
-    printed = true;
+    queue.push_back(this);
 
-    for (auto& [symbol, state] : transitions) state->print_all();
+    while (!queue.empty()) {
+      auto state = queue.front();
+      queue.pop_front();
+
+      if (std::ranges::find(visited, state->id) != visited.end()) continue;
+      visited.push_back(state->id);
+
+      // Add all transitions to the queue
+      for (auto& [_, _state] : state->transitions) queue.push_back(_state.get());
+
+      state->print();
+    }
 
     return this;
   }
@@ -129,22 +140,54 @@ namespace pile::Parser {
   }
 
   State* State::calculate_goto(const Grammar::GrammarContent& grammar) {
-    for (const auto& [_, symbols] : this->productions) {
-      // Get the next symbol
-      auto nextSymbol = Grammar::find_symbol_next_to_dot(symbols);
+    // for (const auto& [_, symbols] : this->productions) {
+    //   // Get the next symbol
+    //   auto nextSymbol = Grammar::find_symbol_next_to_dot(symbols);
+    //
+    //   if (std::holds_alternative<Grammar::Empty>(nextSymbol)) continue;
+    //
+    //   // If the next symbol is not already in the transitions add it's goto
+    //   if (!this->find_symbol_in_state_transitions(nextSymbol)) continue;
+    //
+    //   // For every production that this symbols is preceded by the dot
+    //   auto _productions = this->find_productions_that_the_symbols_preceeds_the_dot(nextSymbol);
+    //   if (_productions.empty()) continue;
+    //
+    //   // Generate the goto state
+    //   std::shared_ptr<State> goto_state = generate_goto_state(_productions, nextSymbol, grammar);
+    //   this->push_transition(nextSymbol, goto_state);
+    // }
 
-      if (std::holds_alternative<Grammar::Empty>(nextSymbol)) continue;
+    // Create a queue of states to be processed
+    std::deque<State*> states;
+    states.push_back(this);
 
-      // If the next symbol is not already in the transitions add it's goto
-      if (!this->find_symbol_in_state_transitions(nextSymbol)) continue;
+    // Generate the goto state for every state in the queue
+    while (!states.empty()) {
+      auto state = states.front();
+      states.pop_front();
 
-      // For every production that this symbols is preceded by the dot
-      auto _productions = this->find_productions_that_the_symbols_preceeds_the_dot(nextSymbol);
-      if (_productions.empty()) continue;
+      // For every production in the state
+      for (const auto& [_, symbols] : state->productions) {
+        // Get the next symbol
+        auto nextSymbol = Grammar::find_symbol_next_to_dot(symbols);
 
-      // Generate the goto state
-      std::shared_ptr<State> goto_state = generate_goto_state(_productions, nextSymbol, grammar);
-      this->push_transition(nextSymbol, goto_state);
+        if (std::holds_alternative<Grammar::Empty>(nextSymbol)) continue;
+
+        // If the next symbol is not already in the transitions add it's goto
+        if (!state->find_symbol_in_state_transitions(nextSymbol)) continue;
+
+        // For every production that this symbols is preceded by the dot
+        auto _productions = state->find_productions_that_the_symbols_preceeds_the_dot(nextSymbol);
+        if (_productions.empty()) continue;
+
+        // Generate the goto state
+        std::shared_ptr<State> goto_state = generate_goto_state(_productions, nextSymbol, grammar);
+        state->push_transition(nextSymbol, goto_state);
+
+        // Add the goto state to the queue
+        states.push_back(goto_state.get());
+      }
     }
 
     return this;
@@ -163,10 +206,12 @@ namespace pile::Parser {
 
     for (auto& [production, symbols] : _productions) state->push_production(production, symbols);
 
-    state->expand(grammar)->calculate_goto(grammar);
+    // state->expand(grammar)->calculate_goto(grammar);
+    state->expand(grammar);
     return state;
   }
 
   std::vector<std::pair<State::StateProductions, std::shared_ptr<State>>> State::memo;
   uint16_t State::counter;
+
 }  // namespace pile::Parser
