@@ -74,7 +74,8 @@ namespace pile::Lexer {
             auto keyword = std::find(keywords.begin(), keywords.end(), current_lexeme);
 
             if (keyword != keywords.end()) {
-              token_type = "keyword";
+              // Token type will be equal to the lexeme
+              token_type = current_lexeme;
               auto category = categories.find(current_lexeme);
               if (category != categories.end()) {
                 result.category = category->second;
@@ -133,7 +134,7 @@ namespace pile::Lexer {
             auto keyword = std::find(keywords.begin(), keywords.end(), current_lexeme);
 
             if (keyword != keywords.end()) {
-              token_type = "keyword";
+              token_type = current_lexeme;
               auto category = categories.find(current_lexeme);
               if (category != categories.end()) {
                 result.category = category->second;

@@ -25,10 +25,12 @@ namespace pile {
     bool empty() const { return m_stack.empty(); }
     size_t size() const { return m_stack.size(); }
     void print() const {
+      fmt::print("[");
       for (auto it = m_stack.begin(); it != m_stack.end(); it++) {
         fmt::print("{} ", *it);
       }
-      fmt::print("\n");
+      // Remove the last space from the buffer
+      fmt::print("\b]\n");
     }
 
   private:

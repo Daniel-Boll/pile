@@ -42,10 +42,10 @@ namespace pile::Parser {
 
       auto [action_type, action_value] = action;
 
-      stack.print();
-      print_token_string_from_iterator(token);
-      TableEntry::print_action(action_type, action_value);
-      fmt::print("\n");
+      // stack.print();
+      // print_token_string_from_iterator(token);
+      // TableEntry::print_action(action_type, action_value);
+      // fmt::print("\n");
 
       if (action_type == TableEntry::Action::Shift) {
         stack.push(token->type);
@@ -74,7 +74,7 @@ namespace pile::Parser {
 
   SLR* SLR::populate_state_machine() {
     // TODO: Check if there's a reasonable way to accomplish this multithreaded.
-    state_machine.get()->expand(this->grammar)->calculate_goto(this->grammar);
+    state_machine.get()->expand(grammar)->calculate_goto(grammar);
     return this;
   }
 
@@ -96,7 +96,8 @@ namespace pile::Parser {
     for (const auto [id, goto_to, production] : forth_rule_result)
       table.add_goto_entries_to_id(id, {production, goto_to});
 
-    table.add_accept()->print();
+    table.add_accept();
+    // table.add_accept()->print();
 
     return this;
   }

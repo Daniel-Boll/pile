@@ -6,7 +6,6 @@ namespace pile::Parser {
     // 1. Add $ to the follow set of the start symbol
     const auto start_symbol = this->grammar.content.begin()->first;
 
-    // fmt::print("Start symbol: {}\n", start_symbol.content);
     this->follow_set[start_symbol].insert(Grammar::Terminal{"$"});
 
     std::map<Grammar::Production, std::set<Grammar::Symbol>> prev_follow_set;
@@ -17,20 +16,20 @@ namespace pile::Parser {
     }
 
     // Print follow set
-    fmt::print("Follow set:\n");
-    for (const auto [production, follow_set] : this->follow_set) {
-      fmt::print("{} : ", production.content);
-
-      std::vector set_to_vector(follow_set.begin(), follow_set.end());
-
-      // Reverse the order of the elements
-      for (const auto symbol : set_to_vector) {
-        // Get elements from the set
-        fmt::print("{} ", Grammar::to_string(symbol));
-      }
-      fmt::print("\n");
-    }
-    fmt::print("\n");
+    // fmt::print("Follow set:\n");
+    // for (const auto [production, follow_set] : this->follow_set) {
+    //   fmt::print("{} : ", production.content);
+    //
+    //   std::vector set_to_vector(follow_set.begin(), follow_set.end());
+    //
+    //   // Reverse the order of the elements
+    //   for (const auto symbol : set_to_vector) {
+    //     // Get elements from the set
+    //     fmt::print("{} ", Grammar::to_string(symbol));
+    //   }
+    //   fmt::print("\n");
+    // }
+    // fmt::print("\n");
 
     return this;
   }
@@ -40,10 +39,7 @@ namespace pile::Parser {
     for (auto [_production, _symbols] : this->grammar.content) {
       if (production != _production) continue;
 
-      fmt::print("First set for <{}> : \n", production.content);
-
       for (const auto &symbol : _symbols) {
-        fmt::print("{} \n", Grammar::to_string(symbol));
         // If the symbol is a terminal, then the first set is just the symbol
         if (std::holds_alternative<Grammar::Terminal>(symbol)) {
           this->first_set[production].insert(std::get<Grammar::Terminal>(symbol));

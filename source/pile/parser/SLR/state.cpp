@@ -15,6 +15,7 @@ namespace pile::Parser {
     auto dot = std::ranges::find_if(symbols, [](Grammar::Symbol symbol) {
       return std::holds_alternative<Grammar::Dot>(symbol);
     });
+
     if (dot == symbols.end()) {
       symbols.insert(symbols.begin(), Grammar::Dot{});
     } else if (dot + 1 != symbols.end()) {
@@ -62,7 +63,7 @@ namespace pile::Parser {
     fmt::print("  .transition = {},\n", Grammar::to_string(transition));
     fmt::print("  .transitions = [");
     for (auto [symbol, state] : transitions) {
-      fmt::print("{{{}, {}}}", Grammar::to_string(symbol), state->id);
+      fmt::print("{{{}, {}}}, ", Grammar::to_string(symbol), state->id);
     }
     fmt::print("],\n");
 
@@ -83,12 +84,11 @@ namespace pile::Parser {
 
   bool State::find_production_in_state_productions(const Grammar::Production& production) {
     // Find the production in the state's productions only if the first symbol is a dot
-    return std::ranges::find_if(
-               this->productions,
-               [&production](const auto& pair) {
-                 return std::get<0>(pair) == production
-                        && std::holds_alternative<Grammar::Dot>(std::get<1>(pair)[0]);
-               })
+    return std::ranges::find_if(this->productions,
+                                [&production](const auto& pair) {
+                                  return pair.first == production
+                                         && std::holds_alternative<Grammar::Dot>(pair.second[0]);
+                                })
            == this->productions.end();
   }
 
@@ -115,14 +115,12 @@ namespace pile::Parser {
     StateProductions last_state;
     do {
       last_state = this->productions;
+
       // For every state in the state machine
       for (const auto& [_, symbols] : this->productions) {
-        // Get the next symbol
         auto nextSymbol = Grammar::find_symbol_next_to_dot(symbols);
 
-        if (std::holds_alternative<Grammar::Empty>(nextSymbol)) {
-          continue;
-        }
+        if (std::holds_alternative<Grammar::Empty>(nextSymbol)) continue;
 
         // If the next symbol is a production and it's not already in the productions
         if (std::holds_alternative<Grammar::Production>(nextSymbol)
@@ -140,24 +138,6 @@ namespace pile::Parser {
   }
 
   State* State::calculate_goto(const Grammar::GrammarContent& grammar) {
-    // for (const auto& [_, symbols] : this->productions) {
-    //   // Get the next symbol
-    //   auto nextSymbol = Grammar::find_symbol_next_to_dot(symbols);
-    //
-    //   if (std::holds_alternative<Grammar::Empty>(nextSymbol)) continue;
-    //
-    //   // If the next symbol is not already in the transitions add it's goto
-    //   if (!this->find_symbol_in_state_transitions(nextSymbol)) continue;
-    //
-    //   // For every production that this symbols is preceded by the dot
-    //   auto _productions = this->find_productions_that_the_symbols_preceeds_the_dot(nextSymbol);
-    //   if (_productions.empty()) continue;
-    //
-    //   // Generate the goto state
-    //   std::shared_ptr<State> goto_state = generate_goto_state(_productions, nextSymbol, grammar);
-    //   this->push_transition(nextSymbol, goto_state);
-    // }
-
     // Create a queue of states to be processed
     std::deque<State*> states;
     states.push_back(this);
@@ -206,7 +186,6 @@ namespace pile::Parser {
 
     for (auto& [production, symbols] : _productions) state->push_production(production, symbols);
 
-    // state->expand(grammar)->calculate_goto(grammar);
     state->expand(grammar);
     return state;
   }

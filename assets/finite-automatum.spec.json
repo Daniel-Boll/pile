@@ -1,5 +1,5 @@
 {
-  "keywords": ["f32", "f64", "i32", "bool", "if", "while", "do", "else", "macro", "end", "swap", "dup", "dup2", "dump", "range"],
+  "keywords": ["f32", "f64", "i32", "bool", "if", "while", "do", "else", "macro", "end", "swap", "dup", "dup2", "dump", "range", "drop"],
   "categories": {
     "control_flow": ["if", "while", "do", "else", "end"],
     "stack": ["dup", "dump"],
@@ -96,11 +96,11 @@
     },
     "cmp-op": {
       "type": "computer",
-      "computes": "cmp-op"
+      "computes": "comparison-op"
     },
     "cmp-op*": {
       "type": "computer",
-      "computes": "cmp-op",
+      "computes": "comparison-op",
       "exception": "backtrack"
     },
     "id-1": {
@@ -175,7 +175,7 @@
     },
     "hex": {
       "type": "computer",
-      "computes": "hex",
+      "computes": "integer-literal",
       "exception": "compute_hex"
     },
     "error_hex": {

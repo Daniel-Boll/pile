@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
       try {
         pile::Lexer::analyze(file, &include_dir);
         const auto grammar = pile::Parser::Grammar::parse<"assets/grammar.spec.glc">();
-        grammar.print();
+        // grammar.print();
       } catch (const std::exception &e) {
         spdlog::error("Lexical analysis failed");
         spdlog::error("{}", e.what());
