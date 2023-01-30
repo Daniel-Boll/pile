@@ -1,7 +1,6 @@
-#include <pile/utils/common.hpp>
-
 #include <pile/lexer/lexer.hpp>
 #include <pile/parser/grammar.hpp>
+#include <pile/utils/common.hpp>
 
 int main(int argc, char **argv) {
   spdlog::set_pattern("[%H:%M:%S] [%^%l%$] %v");
