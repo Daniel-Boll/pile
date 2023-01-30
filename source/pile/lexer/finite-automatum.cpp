@@ -46,6 +46,8 @@ namespace pile::Lexer {
       auto current_node = std::ranges::find_if(
           nodes, [current_node_id](auto node) { return node.id == current_node_id; });
 
+      // fmt::print("Current node: {}\n", current_node_id);
+
       switch (current_node->type) {
         case NodeType::Normal: {
           for (auto [regex, next] : current_node->transitions) {
@@ -72,7 +74,8 @@ namespace pile::Lexer {
             auto keyword = std::find(keywords.begin(), keywords.end(), current_lexeme);
 
             if (keyword != keywords.end()) {
-              token_type = "keyword";
+              // Token type will be equal to the lexeme
+              token_type = current_lexeme;
               auto category = categories.find(current_lexeme);
               if (category != categories.end()) {
                 result.category = category->second;
@@ -131,7 +134,7 @@ namespace pile::Lexer {
             auto keyword = std::find(keywords.begin(), keywords.end(), current_lexeme);
 
             if (keyword != keywords.end()) {
-              token_type = "keyword";
+              token_type = current_lexeme;
               auto category = categories.find(current_lexeme);
               if (category != categories.end()) {
                 result.category = category->second;

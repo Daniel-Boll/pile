@@ -1,0 +1,21 @@
+<program> -> <statement> | ε
+
+<statement> -> <if-statement> | <while-statement> | <range-statement> | <numeric-literal> | <assign-to-identifier> | <cast> | <variable-declaration> | <stack-ops> | string-literal | id | arithmetic-op | comparison-op | <statement> <statement>
+
+<cast> -> cast-op <type>
+<type> -> i32 | f32 | f64 | bool
+<variable-declaration> -> <type> id
+<assign-to-identifier> -> assign-op id
+<numeric-literal> -> integer-literal | float-literal | bool
+
+<stack-ops> -> drop | swap | dup | dup2 | over | dump
+
+<if-structure> -> if <statement>
+<if-statement> -> <if-structure> end | <if-structure> else <statement> end
+
+<while-logic> -> comparison-op | <numeric-literal> | <stack-ops> | id
+<while-logic'> -> <while-logic'> <while-logic> | <while-logic>
+<while-statement> -> while <while-logic'> do <statement> end
+
+<optional-id> -> id | ε
+<range-statement> -> range <optional-id> do <statement> end

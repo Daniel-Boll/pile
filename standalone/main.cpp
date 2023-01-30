@@ -1,7 +1,6 @@
-#include <pile/utils/common.hpp>
-
 #include <pile/lexer/lexer.hpp>
 #include <pile/parser/grammar.hpp>
+#include <pile/utils/common.hpp>
 
 int main(int argc, char **argv) {
   spdlog::set_pattern("[%H:%M:%S] [%^%l%$] %v");
@@ -57,7 +56,7 @@ int main(int argc, char **argv) {
       try {
         pile::Lexer::analyze(file, &include_dir);
         const auto grammar = pile::Parser::Grammar::parse<"assets/grammar.spec.glc">();
-        grammar.print();
+        // grammar.print();
       } catch (const std::exception &e) {
         spdlog::error("Lexical analysis failed");
         spdlog::error("{}", e.what());

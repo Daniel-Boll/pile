@@ -13,6 +13,13 @@ namespace pile::Parser::Grammar {
     std::string content;
 
     bool operator==(GrammarElement const &other) const { return content == other.content; }
+    bool operator!=(GrammarElement const &other) const { return content != other.content; }
+
+    // Add the possibility to add GrammarElement to a set
+    bool operator<(GrammarElement const &other) const { return content < other.content; }
+
+    // Add operator <==>
+    auto operator<=>(GrammarElement const &other) const = default;
   };
 
   struct Terminal : GrammarElement {
@@ -20,9 +27,14 @@ namespace pile::Parser::Grammar {
   };
 
   struct Empty : GrammarElement {
-    explicit Empty() : GrammarElement{""} {}
+    explicit Empty() : GrammarElement{"ε"} {}
   };
 
+  struct Dot : GrammarElement {
+    explicit Dot() : GrammarElement{"·"} {}
+  };
+
+  // NOTE: Perhaps I should change this name to NonTerminal instead
   struct Production : GrammarElement {
     explicit Production(std::string const &content) {
       // Remove <> if present
@@ -34,8 +46,10 @@ namespace pile::Parser::Grammar {
     }
   };
 
-  using grammar_content_t
-      = std::vector<std::pair<Production, std::vector<std::variant<Terminal, Production, Empty>>>>;
+  using Symbol = std::variant<Terminal, Production, Empty, Dot>;
+  using Symbols = std::vector<Symbol>;
+
+  using grammar_content_t = std::vector<std::pair<Production, Symbols>>;
 
   struct GrammarContent {
     grammar_content_t content;
@@ -66,8 +80,14 @@ namespace pile::Parser::Grammar {
 
   bool is_production(std::string const &element);
   bool is_empty(std::string const &element);
+  bool is_terminal(std::string const &element);
 
-  template <FixedString path> GrammarContent parse() {
+  struct ParserProps {
+    bool expand;
+  };
+
+  // Expects a optional ParserProps, otherwise initialize one with expand to false
+  template <FixedString path> GrammarContent parse(ParserProps const &props = {.expand = false}) {
     std::ifstream file(path.content);
     if (!file.is_open()) throw std::string("Could not open file: ") + path.content;
 
@@ -92,21 +112,35 @@ namespace pile::Parser::Grammar {
         auto const grammar_elements = pile::utils::split(_production, " ");
 
         // Parse grammar elements
-        std::vector<std::variant<Terminal, Production, Empty>> parsed_grammar_elements;
-        std::ranges::transform(
-            grammar_elements, std::back_inserter(parsed_grammar_elements),
-            [](auto const &grammar_element) -> std::variant<Terminal, Production, Empty> {
-              if (is_production(grammar_element)) return Production{grammar_element};
-              if (is_empty(grammar_element)) return Empty{};
-              return Terminal{grammar_element};
-            });
+        Symbols parsed_grammar_elements;
+        std::ranges::transform(grammar_elements, std::back_inserter(parsed_grammar_elements),
+                               [](auto const &grammar_element) -> Symbol {
+                                 if (is_production(grammar_element))
+                                   return Production{grammar_element};
+                                 if (is_empty(grammar_element)) return Empty{};
+                                 return Terminal{grammar_element};
+                               });
 
         // Add production to grammar
         grammar.content.push_back({Production{production}, parsed_grammar_elements});
       }
     }
 
+    if (props.expand) {
+      auto first = grammar.content.front().first.content;
+      grammar.content.insert(grammar.content.begin(),
+                             {Production{fmt::format("{}'", first)}, {Production{first}}});
+    }
+
     return grammar;
   }
 
+  Grammar::Symbol find_symbol_next_to_dot(Grammar::Symbols const &symbols);
+  Grammar::Symbols remove_dot(Grammar::Symbols const &symbols);
+  bool is_dot_at_end(Grammar::Symbols const &symbols);
+
+  uint32_t find_production_index(Grammar::GrammarContent const &grammar,
+                                 std::pair<Production, Symbols> const &production);
+
+  std::string to_string(Grammar::Symbol const &symbol);
 }  // namespace pile::Parser::Grammar

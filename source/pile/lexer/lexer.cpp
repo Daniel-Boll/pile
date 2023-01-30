@@ -56,7 +56,7 @@ namespace pile::Lexer {
       // Get all the tokens that are not from the type "space or tab" or "comment"
       std::ranges::copy_if(tokens, std::back_inserter(final_tokens), [](auto token) {
         // TODO: capture this from flags like: "--keep-comments"
-        return token.type != "space or tab" && token.type != "comment";
+        return token.type != "space-or-tab" && token.type != "comment";
       });
 
       line_number++;
@@ -64,13 +64,13 @@ namespace pile::Lexer {
 
     // Macro expansion
     auto result = MacroExpander::expand(final_tokens, &macros);
-    for (auto &token : result.tokens) {
-      std::string print_category = (token.category != "none" && !token.category.empty())
-                                       ? fmt::format("<{}>", token.category)
-                                       : "";
-      fmt::print("({}, {}{}, {}, <{}:{}>)\n", token.file, token.type, print_category, token.lexeme,
-                 token.position.first, token.position.second);
-    }
+    // for (auto &token : result.tokens) {
+    //   std::string print_category = (token.category != "none" && !token.category.empty())
+    //                                    ? fmt::format("<{}>", token.category)
+    //                                    : "";
+    //   fmt::print("({}, {}{}, {}, <{}:{}>)\n", token.file, token.type, print_category, token.lexeme,
+    //              token.position.first, token.position.second);
+    // }
 
     return result;
   }

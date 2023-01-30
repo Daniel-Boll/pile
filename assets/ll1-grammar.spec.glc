@@ -1,18 +1,20 @@
-<program> -> <statement>
+<program> -> <list-statement>
 
-<statement> -> <if-statement> | <while-statement> | <range-statement> | <numeric-literal> | string-literal | id | <assign-to-identifier> | <cast> | <variable-declaration> | arithmetic-op | comparison-op | <stack-op> | <list-statement>
-<list-statement> -> <list-statement'> <statement>
+<list-statement> -> <statement> <list-statement'>
 <list-statement'> -> <statement> <list-statement'> | ε
+
+<statement> -> <if-statement> | <while-statement> | <range-statement> | <numeric-literal> | string-literal | id | <assign-to-identifier> | <cast> | <variable-declaration> | arithmetic-op | comparison-op | <stack-ops>
 
 <cast> -> :: <type>
 <type> -> i32 | f32 | f64 | bool
 <variable-declaration> -> <type> id
 <assign-to-identifier> -> @ id
+<numeric-literal> -> integer-literal | float-literal | bool
 
 <stack-ops> -> drop | swap | dup | dup2 | over | dump
 
-<if-statement> -> if <statement> <if-statement'>
-<if-statement'> -> end | else <statement> end
+<if-statement> -> if <statement> <if-statement'> end
+<if-statement'> -> else <statement> | ε
 
 <while-statement> -> while <while-logic> do <statement> end
 <while-logic> -> comparison-op <while-logic'> | <numeric-literal> <while-logic'> | <stack-ops> <while-logic'>

@@ -5,4 +5,3 @@
 1.0::f64 3.14::f64 \ f64
 0::bool 1::bool \ explicitly booleans
 ::f32 \ if no number is inserted before cast to the
-top of the stack

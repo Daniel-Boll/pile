@@ -8,3 +8,6 @@ template <int N> struct FixedString {
   char content[N];
 };
 template <int N> FixedString(char const (&)[N]) -> FixedString<N>;
+
+template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
